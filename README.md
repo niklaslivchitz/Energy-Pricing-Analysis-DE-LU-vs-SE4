@@ -2,6 +2,8 @@
 
 Full plan, rationale, and analysis design: `docs/project-brief.md`.
 
+##TLDR - This is a skeleton of the project to be filled in a modular fashion as progress goes along.
+
 ## Structure — organized by build phase (see brief Section 10)
 
 ```
