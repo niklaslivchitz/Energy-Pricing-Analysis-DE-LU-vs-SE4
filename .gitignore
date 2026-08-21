@@ -1,8 +1,25 @@
-venv/
+# secrets
+.env
+*.token
+
+# data
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+db/*.db
+
+# logs
+*.log
+
+# python
 __pycache__/
 *.pyc
-.env
-data/*.db
-data/*.csv
+.venv/
+venv/
+
+# notebooks
 .ipynb_checkpoints/
+
+# os
 .DS_Store

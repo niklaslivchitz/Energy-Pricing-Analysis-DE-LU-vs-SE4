@@ -1,0 +1,33 @@
+# Stretch goal (Phase 7 / brief Section 9). Disabled by default - uncomment
+# the `schedule` trigger once phase_3_etl_pipeline/pipeline.py runs cleanly
+# and ENTSOE_API_KEY is set as a repo secret.
+#
+# GitHub Actions runners are stateless, so this workflow commits
+# db/energy.db back to the repo at the end of each run to persist it.
+
+name: scheduled-pipeline
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: '0 6 * * *'
+
+jobs:
+  fetch-and-load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: python phase_3_etl_pipeline/pipeline.py
+        env:
+          ENTSOE_API_KEY: ${{ secrets.ENTSOE_API_KEY }}
+      - name: Commit updated db
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add db/energy.db
+          git commit -m "Scheduled data refresh" || echo "No changes"
+          git push

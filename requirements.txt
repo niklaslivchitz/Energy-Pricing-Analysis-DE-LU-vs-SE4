@@ -1,22 +1,7 @@
-# Core
+entsoe-py
 pandas
-requests
-python-dotenv
-
-# Viz (Phase 1-5)
-seaborn
-matplotlib
-plotly
-
-# Stats (Phase 2, 4)
 statsmodels
 scikit-learn
-
-# ETL / storage (Phase 3+)
-# sqlite3 is in the Python standard library - nothing to install
-
-# Notebooks (Phase 4-5)
+seaborn
+plotly
 jupyter
-
-# Phase 6 stretch only (ENTSO-E) - uncomment if/when you get there
-# entsoe-py
