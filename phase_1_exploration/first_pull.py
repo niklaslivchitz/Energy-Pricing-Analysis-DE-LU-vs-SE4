@@ -10,6 +10,10 @@ Run: python phase_1_exploration/first_pull.py
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # load .env file for ENTSOE_API_KEY
 
 from common.entsoe_client import get_client, ZONE_DE
 
@@ -24,3 +28,4 @@ plt.title("DE-LU Day-Ahead Price, first week of Jan 2024")
 plt.ylabel("EUR/MWh")
 plt.savefig("outputs/figures/phase1_de_price_sample.png")
 print(f"Pulled {len(prices)} hourly price points for {ZONE_DE}")
+
