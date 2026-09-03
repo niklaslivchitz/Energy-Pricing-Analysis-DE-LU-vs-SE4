@@ -23,3 +23,6 @@ venv/
 
 # os
 .DS_Store
+
+#visual studio
+.vscode/*

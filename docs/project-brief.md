@@ -1,18 +1,13 @@
-# Project Brief v2: Germany vs. Sweden — ENTSO-E-Only Build
+# Project Brief v3: Germany vs. Sweden — ENTSO-E-Only Build
 
-**Status:** Revised from original SCB+SMARD brief after evaluating data availability. Pivoted to a single-source (ENTSO-E) build.
+**Status:** Single-source (ENTSO-E) build, in progress. Phase 1 rescoped and complete — see Section 10.
 **Core question:** How does renewable variability relate to price volatility, and how does cross-border transmission capacity between Germany and Sweden shape price convergence/divergence?
 
 ---
 
 ## 1. Why ENTSO-E only
 
-Original plan paired SCB (Sweden) with SMARD (Germany). Investigating the actual data availability surfaced two problems:
-
-- **Neither SMARD nor Energy-Charts (Fraunhofer ISE) exposes a documented, stable intraday continuous price series.** SMARD's full filter list (from its `openapi.yaml`) only has day-ahead-style "Marktpreis" codes — no intraday. Energy-Charts' officially documented API is day-ahead only; the intraday series that appears on their website is only reachable via undocumented internal chart files or a paid third-party reseller. This killed the original "day-ahead vs. intraday divergence" centerpiece as scoped.
-- **ENTSO-E has the same day-ahead-only limitation** (continuous intraday trading doesn't clear at one price per interval, so there's no equivalent document type), but it's the *only* source that gives you **both countries' day-ahead prices and generation-by-source in one consistent schema**, with a stable free API.
-
-Trade-off accepted: you lose some of the "reconciling messy multi-agency data" portfolio flex from the original plan. You gain a much simpler pipeline (one auth step, one XML shape, one SQLite schema) and — importantly — **cheap extensibility**: adding a third country later is a bidding-zone lookup, not a new integration.
+Originally scoped as a two-source build (SCB for Sweden, SMARD for Germany), but neither exposed a stable intraday price series, which was the original centerpiece. ENTSO-E is the only source giving both countries' day-ahead prices and generation-by-source in one consistent schema, with a stable free API and cheap extensibility to more countries later (a bidding-zone lookup, not a new integration).
 
 ---
 
@@ -153,9 +148,9 @@ If you want the live-refresh nice-to-have:
 
 ## 10. Rough build order
 
-1. **Phase 1 — manual exploration:** get API access, pull one week of DE-LU day-ahead prices and generation via `entsoe-py`, into pandas, one Seaborn chart. Goal is just proving the mechanics work.
-2. **Phase 2 — expand to Sweden:** add SE1–SE4 price and generation pulls. Compute `variable_renewable_share` for both countries.
-3. **Phase 3 — formalize into SQLite:** refactor manual scripts into fetch → transform → load functions writing into the schema in Section 7.
+1. **Phase 1 — manual exploration (rescoped, complete):** get API access, then prove the mechanics work for all three data shapes at once — day-ahead prices (DE-LU, SE4, SE1), generation-by-source (DE-LU, SE4, reshaped wide→long), and cross-border physical flows (DE-LU↔SE4, both directions) — for one sample week, in `phase_1_exploration/01_entsoe_exploration.ipynb`. Sweden's price/generation pulls, originally slated for Phase 2, happened here instead since there was no reason to wait.
+2. **Phase 2 — quality check + first analysis (rescoped from "expand to Sweden," now redundant per above):** cache the sample pull to disk (`data/processed/`, long-format CSVs matching Section 7's schema) so this and later phases stop re-hitting the API on every run; eyeball data quality (missing timestamps, resolution mismatches — note the API returns 15-min intervals, not hourly as earlier assumed — plausibility of generation values); first informal look at `variable_renewable_share` for both countries before the formal regression in Phase 4.
+3. **Phase 3 — formalize into SQLite:** refactor into fetch → transform → load functions writing into the schema in Section 7, reusing the reshape logic and cached CSVs from Phase 2 rather than re-deriving it.
 4. **Phase 4 — Analysis 1 (volatility vs. renewable share):** the more self-contained of the two core analyses — good to do first.
 5. **Phase 5 — Analysis 2 (DE–SE transmission price pressure):** pull cross-border flow data, join against the price tables already in SQLite.
 6. **Phase 6 — polish:** flagship Plotly interactive view; Tableau piece if time allows.

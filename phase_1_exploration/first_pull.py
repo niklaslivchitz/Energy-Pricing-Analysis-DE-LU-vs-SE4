@@ -1,11 +1,8 @@
 """
 Phase 1: manual exploration.
 
-Goal is NOT insight - it's just proving you can get real ENTSO-E data into
-pandas and onto a chart at all. One zone (DE-LU), one week, one Seaborn chart.
-No pipeline, no SQLite yet - those come in Phase 3.
+Testing pulling as a script here, apart from notebook. I'll do a better version in Phase 2 with prints to csv's.
 
-Run: python phase_1_exploration/first_pull.py
 """
 import pandas as pd
 import seaborn as sns
