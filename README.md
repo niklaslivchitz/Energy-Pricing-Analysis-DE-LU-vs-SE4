@@ -8,7 +8,7 @@ The analytical focus is on price volatility as an effect of renewable energy gen
 
 ## Project Status
 Phase 1 complete: Token is in place and works, API calls for pricing data for SE4 and DE-LU is go, as well as generation mix for SE4 and DE-LU. Details in the worksheet for Phase 1. 
-Phase 2 halfway done - the fetch_and_cache.py script successfully pulls a week of testing data and stores it as csvs in /data/processed.
+Phase 2 complete - the fetch_and_cache.py script successfully pulls a week of testing data and stores it as csvs in /data/processed. Data quality is fine, transformations for analyses work fine. First pass of statistical analysis done, see notebook in the phase 2 folder.
 
 ## Structure — organized by build phase (see brief Section 10)
 
@@ -17,8 +17,8 @@ common/                                      Shared code used across phases (ENT
 db/                                          SQLite schema
 docs/                                        Project brief
 phase_1_exploration/                         First manual pull: one zone, prove the mechanics work, rescope pull examples of all tables
-phase_2_quality_and_first_analysis/          rescope - eyeball analysis of the data, quality check, first analysis attempt. Possibly also pyscript.
-phase_3_etl_pipeline/                        Formalize into fetch -> transform -> load, with logging/retry
+phase_2_quality_and_first_analysis/          Naive ETL written, data quality pass done, first proof-of-concept statistical analyses.
+phase_3_etl_pipeline/                        Formalize into fetch -> transform -> load, with logging/retry, also with rework of the folder structure planned.
 phase_4_volatility_vs_renewables/            Core analysis 1
 phase_5_transmission_price_pressure/         Core analysis 2 (DE <-> SE4, Baltic Cable)
 phase_6_polish/                              Flagship interactive view, Tableau piece if time allows
