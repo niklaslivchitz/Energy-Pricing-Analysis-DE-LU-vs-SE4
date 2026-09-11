@@ -154,10 +154,31 @@ Per-zone judgment calls repeat (some countries split into multiple bidding zones
 
 ## 9. Scheduled pipeline (optional, Section 6 of original brief)
 
-If you want the live-refresh nice-to-have:
-- ENTSO-E's rate limit (400 req/min) is a non-issue for a daily scheduled pull.
+**Rescoped 2026-09-11 — data stays out of the public repo, so the pipeline does too.**
+
+Checked ENTSO-E's terms: the datasets used here (day-ahead prices, generation-by-type,
+cross-border flows) are released CC-BY 4.0, so publishing the pulled data on GitHub
+would not have been a legal problem. Decided against it anyway, for repo hygiene —
+a growing SQLite file / CSVs committed on a schedule bloats git history for no real
+benefit. `data/raw/`, `data/processed/`, and `db/*.db` are already gitignored (only
+`.gitkeep` placeholders and `db/schema.sql` are tracked); anyone who wants the data
+runs the fetch/pipeline script themselves against their own ENTSO-E API key.
+
+That kills the original plan below it: a **GitHub Actions job that commits
+`db/energy.db` back to the repo** on a schedule has nothing to persist to once the db
+is gitignored — a stateless runner with no commit target isn't useful. Dropped;
+`.github/workflows/scheduled_pipeline.yml` and its Phase 7 stub removed.
+
+**Replacement:** demonstrate the same "this could run unattended" idea as
+**documented local scheduling instructions** instead of a live job — how to wire the
+fetch/pipeline script into a local cron entry (Linux/Mac) or, since this project's
+dev environment is Windows, Windows Task Scheduler. This is a documentation
+deliverable (the portfolio signal is "knows how to automate this"), not an actually
+-running scheduled job — no CI secret, no unattended process, nothing to keep
+working over time.
+
+- ENTSO-E's rate limit (400 req/min) is a non-issue for a daily scheduled pull, local or not.
 - The one real setup cost is the API-key email registration — one-time, do it early since turnaround isn't instant.
-- **GitHub Actions runners are stateless** — your SQLite file won't persist between scheduled runs unless the workflow commits the updated `.db` file back to the repo at the end of each run. Simplest fix for this project's scope; worth deciding upfront so it's not a surprise later.
 
 ---
 
