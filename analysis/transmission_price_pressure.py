@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from common.entsoe_client import BALTIC_CABLE_CAPACITY_MW
+from src.entsoe_client import BALTIC_CABLE_CAPACITY_MW
 
 DB_PATH = str(Path(__file__).resolve().parents[1] / "db" / "energy.db")
 

@@ -1,13 +1,13 @@
 """
 Phase 3: formalize Phases 1-2 into a proper fetch -> transform -> load
 pipeline writing into SQLite, with the logging/retry/idempotency helpers
-from common/pipeline_utils.py.
+from src/pipeline_utils.py.
 
 This is the "halfway point" per the brief's build order - once this runs
 cleanly for all five zones (DE-LU + SE1-SE4), Phases 4-5 read from
 db/energy.db instead of re-fetching from the API each time.
 
-Run: python phase_3_etl_pipeline/pipeline.py
+Run: python src/pipeline.py
 """
 import sqlite3
 import uuid
@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from common.entsoe_client import get_client, ZONE_DE, ZONES_SE
-from common.pipeline_utils import fetch_with_retry, upsert_dataframe, log_pipeline_run, logger
+from src.entsoe_client import get_client, ZONE_DE, ZONES_SE
+from src.pipeline_utils import fetch_with_retry, upsert_dataframe, log_pipeline_run, logger
 
 DB_PATH = str(Path(__file__).resolve().parents[1] / "db" / "energy.db")
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
