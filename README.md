@@ -3,12 +3,27 @@
 Full plan, rationale, and analysis design: `docs/project-brief.md`.
 
 ## TLDR:
+
+This is a project to answer two questions about the european energy market.
+
+- Do German prices decide those in Sweden, and do we se a decoupling when transfer capacity is at max?
+
+- Does a higher share of renewable generation in Germany drive price volatility?
+
 This is a tech-stack-learning project pulling energy market data from ENTSO-E via their API, storing it, and running analyses on it.
 The analytical focus is on price volatility as an effect of renewable energy generation share, as well as how German (DE-LU) day-ahead prices exert pressure on southern Swedish (SE4) prices via the Baltic Cable interconnector.
 
 ## Project Status
 Phase 1 complete: Token is in place and works, API calls for pricing data for SE4 and DE-LU is go, as well as generation mix for SE4 and DE-LU. Details in the worksheet for Phase 1. 
 Phase 2 complete - the fetch_and_cache.py script successfully pulls a week of testing data and stores it as csvs in /data/processed. Data quality is fine, transformations for analyses work fine. First pass of statistical analysis done, see notebook in the phase 2 folder.
+
+We have some pictures now as a first look at a visualization of the final analysis:
+
+![German day-ahead price, sample week](outputs/figures/phase1_de_price_sample.png)
+*Figure 1: DE_LU day-ahead prices over the Phase 1 sample week (15-min resolution).*
+
+![SE_4 rolling volatility vs renewable share](outputs/figures/phase2_SE_4_rolling_volatility_and_renewables.png)
+*Figure 2: SE_4 24h rolling price volatility against variable renewable share.*
 
 ## Structure — organized by build phase (see brief Section 10)
 
