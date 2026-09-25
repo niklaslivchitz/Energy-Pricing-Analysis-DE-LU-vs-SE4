@@ -13,10 +13,9 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
 ## Questions
 
 1. **Renewables and volatility:** does a higher share of variable renewables
-   (wind + solar) go along with higher day-ahead price volatility, and does
-   this differ between Germany (wind/solar-heavy) and Sweden (hydro/nuclear-heavy)?
+   (wind + solar) go along with higher day-ahead price volatility?
 2. **Transmission price pressure:** do German (DE-LU) and southern Swedish (SE4)
-   prices decouple when the Baltic Cable between them is congested?
+   prices decouple when the Baltic Cable between them is congested? The hypothesis here is that the prices stay very close as long as demand can be equalized between the markets.
 
 ## Status
 
@@ -25,11 +24,8 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
   15-minute resolution, and upserts them into SQLite. Reruns are idempotent.
 - **Data window:** a rolling year up to the latest complete day, but never
   earlier than 2025-12-02, the first date ENTSO-E publishes every series here
-  at 15-minute resolution. That keeps all data at one uniform resolution. Until
-  December 2026 the window is shorter than a year, so it doesn't yet cover a
-  full seasonal cycle (October–November are missing); after that it's a full
-  year automatically.
-- **Next:** the full pull, then both analyses.
+  at 15-minute resolution.
+- **Next:** Both analyses.
 - **Early finding (provisional, one sample week):** renewable share came out
   *negatively* correlated with price volatility in both zones, the opposite of
   the starting hypothesis. The full-year data will show whether this holds.
