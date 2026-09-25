@@ -1,31 +1,25 @@
-# Project Brief v3: Germany vs. Sweden — ENTSO-E-Only Build
+# Project Brief v3
 
-**Status:** Single-source (ENTSO-E) build, in progress. Phases 1–2 complete. Phase 3 (ETL pipeline into SQLite) is working end to end for prices, generation and flows on a test week; the full one-year pull is next. See Section 10.
-**Core question:** How does renewable variability relate to price volatility, and how does cross-border transmission capacity between Germany and Sweden shape price convergence/divergence?
-
----
-
-## 1. Why ENTSO-E only
-
-Originally scoped as a two-source build (SCB for Sweden, SMARD for Germany), but neither exposed a stable intraday price series, which was the original centerpiece. ENTSO-E is the only source giving both countries' day-ahead prices and generation-by-source in one consistent schema, with a stable free API and cheap extensibility to more countries later (a bidding-zone lookup, not a new integration).
+**Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU, in a modular fashion (more markets are easy to add without touching the database). SQLite is up and running.
+**Core question:** How does renewable variability relate to price volatility in Germany, and how does cross-border transmission capacity between Germany and Sweden shape price convergence/divergence?
 
 ---
 
 ## 2. Data source: ENTSO-E Transparency Platform
 
-**Access:** Register at transparency.entsoe.eu, then email `transparency@entsoe.eu` requesting RESTful API access (subject: "Restful API access"). Not instant — budget a day or few for the token to come back. Once issued, it's a stable long-lived token.
+**Access:** Register at transparency.entsoe.eu, then email `transparency@entsoe.eu` requesting RESTful API access (subject: "Restful API access").
 
-**Client library:** Use `entsoe-py` (or its maintained fork `python-entsoe`) rather than parsing raw XML by hand. It wraps the IEC 62325 market documents and hands back pandas Series/DataFrames indexed by timestamp — ready to load into SQLite.
+**Client library:** Use `entsoe-py`
 
-**Rate limits:** 400 requests/minute per token. A daily scheduled pull across a handful of zones and series is a non-issue at this volume, even backfilling months of history in one run.
+**Rate limits:** 400 requests/minute per token. Should be a non-issue for this project.
 
-**Datasets you need:**
-| Document | What it gives you | entsoe-py method (approx.) |
+**Datasets:**
+| Document | What it gives | entsoe-py method (approx.) |
 |---|---|---|
 | Day-ahead prices (A44) | 15-min price, EUR/MWh, per bidding zone | `query_day_ahead_prices()` |
 | Actual generation per production type (A75) | 15-min generation by source (wind, solar, hydro, nuclear, etc.) per zone | `query_generation(..., nett=True)` |
 | Cross-border physical flows | 15-min flow between two zones, one direction per query | `query_crossborder_flows()` |
-| (Optional, not pulled yet) Transfer capacity / scheduled exchanges | Cross-border capacity and planned commercial exchange | `query_net_transfer_capacity_weekahead()`, `query_scheduled_exchanges()` (see Section 5) |
+| (Optional, not pulled yet) Transfer capacity / scheduled exchanges | Cross-border capacity and planned commercial exchange | `query_net_transfer_capacity_weekahead()`, `query_scheduled_exchanges()` |
 
 **Resolution note (checked against the API 2026-09-25):** current data comes at 15-minute resolution, not hourly as this brief originally assumed. The switch happened at different dates per data type:
 
@@ -50,8 +44,6 @@ What this means over time:
 - Germany: `DE-LU` — single zone, no ambiguity.
 - Sweden: split into **SE1–SE4**. For the renewable-share/volatility analysis, decide whether to use one reference zone, an average, or all four (worth pulling all four since it's the same cost per extra zone). For the DE–SE transmission analysis specifically, **use SE4** — see below.
 
-**Eyeballing the data before building:** transparency.entsoe.eu itself renders this data as charts/tables, no key required. Day-ahead prices: Dashboard → Markets → Day-ahead Prices. Generation mix: Dashboard → Generation → Actual Generation per Production Type. Both let you export a CSV sample directly from the browser.
-
 ---
 
 ## 3. Physical reality check: the DE–SE interconnection
@@ -59,9 +51,9 @@ What this means over time:
 Worth confirming before designing the transmission analysis, since it determines what's actually observable:
 
 - **Baltic Cable** — an existing, operational ~600 MW HVDC link connecting **SE4** (southern Sweden) and Germany, run by Baltic Cable AB (Statkraft). This is the real physical channel your flow/price-pressure analysis will be measuring.
-- **Hansa PowerBridge** — a proposed second, larger (700 MW) DE–SE link — **was rejected by the Swedish government in 2024** over concerns it would import volatility from the German market into southern Sweden. It is not being built. So historical and current cross-border capacity between the two countries stays capped at Baltic Cable's ~600 MW for the whole analysis period — don't design around a link that doesn't exist.
+- **Hansa PowerBridge** — a proposed second, larger (700 MW) DE–SE link — **was rejected by the Swedish government in 2024** over concerns it would import volatility from the German market into southern Sweden.
 
-This is exactly why **SE4** (not SE3 or a national average) is the right Swedish zone for the transmission-specific analysis: it's the zone Baltic Cable physically connects to.
+This is exactly why **SE4** (not SE3 or a national average) is the right Swedish zone for the transmission-specific analysis: it's the zone Baltic Cable physically connects to. Lets leave the analysis of swedish internal transmission to another day.
 
 ---
 
@@ -69,20 +61,17 @@ This is exactly why **SE4** (not SE3 or a national average) is the right Swedish
 
 **Question:** Does a higher share of variable renewables (wind + solar) associate with higher day-ahead price volatility, and does this differ between Germany (wind/solar-heavy) and Sweden (hydro/nuclear-heavy)?
 
-**Methodological note worth stating explicitly in the writeup:** define "renewable share" as **wind + solar specifically**, not all renewables. Hydro (dominant in Sweden) is dispatchable and grid-stabilizing — lumping it in with wind/solar would blur the actual hypothesis, which is about *variable, weather-driven* generation, not renewables in general. This distinction is itself a small finding worth calling out.
+**Methodological note worth stating explicitly in the writeup:** define "renewable share" as **wind + solar specifically**, not all renewables. Hydro (dominant in Sweden) is dispatchable and grid-stabilizing — lumping it in with wind/solar would be confounding the issue, which is about *variable, weather-driven* generation, not renewables in general.
 
 **Steps:**
 1. Pull hourly day-ahead price and generation-by-source for DE-LU and each Swedish zone.
 2. Compute `variable_renewable_share = (wind + solar) / total_generation` per hour, per zone.
-3. Compute a volatility measure — rolling standard deviation of price (e.g. 24-hour window) is the simplest, defensible choice.
+3. Compute a volatility measure — rolling standard deviation of price (e.g. 24-hour window) is the simplest, defensible choice. Also the standard measure in the Energy sector in practice.
 4. Regress volatility (or `|price change|`) against `variable_renewable_share`, using `statsmodels.ols()` — e.g. `volatility ~ variable_renewable_share + C(country)` to test whether the relationship differs by country, not just whether it exists.
-5. Compare the fitted relationship for DE vs. SE — the expected story (higher variable-renewable share → higher volatility, more pronounced in DE than SE) is a clean, testable hypothesis with a real physical explanation behind it (hydro's flexibility dampens what wind/solar variability would otherwise do to price).
+5. Compare the fitted relationship for DE vs. SE — the expected story (higher variable-renewable share → higher volatility, more pronounced in DE than SE) is a clean, testable hypothesis with a real physical explanation behind it.
 6. Optional extension: rolling volatility clustering — does it concentrate around solar ramp times (dawn/dusk) more in DE than SE? `statsmodels.graphics.tsaplots.plot_acf()` for autocorrelation, one line.
 7. **Within-day spread (added 2026-09-10):** compute per-day peak-hour minus off-peak-hour price spread, per zone. Standard, cheap, and directly relevant — confirmed via literature (mean and std are consistently higher in peak-hour electricity prices than off-peak across markets) — and likely to show a concrete DE-vs-SE contrast on its own: Germany's solar-driven midday price dip ("duck curve") should show up much more sharply than Sweden's flatter, hydro/nuclear-smoothed profile. Uses data already being pulled, no new source needed.
 
-**Methodology note (decided 2026-09-10):** considered but deliberately excluding **jump/continuous volatility decomposition** (bipower-variation-based separation of realized volatility into a smooth "continuous" component and discrete "jumps," with formal jump-significance testing — the Barndorff-Nielsen & Shephard framework, which does show up in electricity-market literature specifically, e.g. Nord Pool and Japan spot market studies). It's a real, verified technique, not a made-up idea — but it's meaningfully heavier (realized-variation math, jump test statistics, significance-threshold judgment calls) than this project's core question needs. Worth a one-line mention by name in the final writeup as a "known more rigorous approach, out of scope here," to signal domain awareness without taking on the implementation cost. The simple rolling-std volatility measure (step 3) plus the peak/off-peak spread (step 7) are sufficient to answer the actual hypothesis.
-
-**Why this is a good centerpiece candidate:** single-country data per test (no cross-source joins needed for this piece), directly testable hypothesis, real mechanism to explain the result either way, and reuses exactly the two ENTSO-E datasets you're already pulling.
 
 **Phase 2 exploratory finding (2026-09-10, provisional):** the sample-week first-look came back the *opposite* sign from the hypothesis above. Spearman correlation between `variable_renewable_share` and 24h rolling price volatility, computed in the Phase 2 exploration notebook (`archive/phase_2_quality_and_first_analysis/phase_2_quality_analysis.ipynb`, now local-only and in git history): **DE_LU ≈ −0.50, SE_4 ≈ −0.57**. More renewables associated with *lower* volatility in this sample, not higher.
 
@@ -107,7 +96,6 @@ This is standard price-coupling logic: interconnected markets should converge to
 6. Optional: regress `|price_spread|` against `flow_utilization` directly for a continuous version of the same relationship.
 7. Optional: check flow direction — does Sweden mostly export to Germany, or does it vary seasonally (e.g. with German wind output)? This adds a narrative layer about *when* each country needs the other.
 
-**Framing note:** this is a much more concrete, physically-grounded version of the original brief's "cross-border flow story," and it no longer needs a 2–3 country reconciliation — it's two zones you already have from the same source.
 
 **Methodology refinement (decided 2026-09-10, from Phase 2's first eyeballed look):**
 
@@ -120,7 +108,7 @@ This is standard price-coupling logic: interconnected markets should converge to
 
 ## 6. Reserve option — synthetic seasonal price curves
 
-Not a core deliverable; an optional add-on if time allows and you want to nod toward your futures/forward-curve background specifically.
+Not a core deliverable; an optional add-on if time allows .
 
 - **What it is:** after doing a seasonal decomposition (`statsmodels.STL()` or `seasonal_decompose()`) on either country's day-ahead price series, take the extracted seasonal component and refit it as a smooth continuous curve — regression on day-of-year/hour-of-day terms, or a Fourier series. The fitted curve becomes a "synthetic seasonal price curve": what a naive forward curve would look like if built from historical spot patterns instead of actual traded futures.
 - **Where it could plug in:** as a small extension on top of whichever core analysis you do a seasonal decomposition for — not a separate standalone piece. Natural candidates:
@@ -133,7 +121,7 @@ Not a core deliverable; an optional add-on if time allows and you want to nod to
 
 ## 7. Updated SQLite schema
 
-Single source simplifies this considerably versus the original two-agency plan — one normalized shape covers everything. The live version is `db/schema.sql`:
+Single source is simple and nice. The live version is `db/schema.sql`:
 
 ```sql
 CREATE TABLE IF NOT EXISTS prices (
@@ -165,7 +153,6 @@ CREATE TABLE IF NOT EXISTS cross_border_flows (
 - **One timestamp format everywhere:** UTC text, `'YYYY-MM-DD HH:MM:SS+00:00'`, produced by `to_utc_str()` in `src/pipeline_utils.py`. ENTSO-E returns local time (CET/CEST), and prices and generation came back with different offsets in the Phase 2 sample. Because keys and joins compare text, the same instant must always produce the same string.
 - **`NOT NULL` on key columns:** SQLite allows NULLs in composite primary keys and never treats two NULLs as equal, so a NULL key would slip past the upsert and duplicate on every run. Value columns stay nullable, so a missing value is stored as missing.
 - **Raw ENTSO-E production type labels** instead of snake_case. Analysis 1 only needs to know which labels count as wind/solar, and that list can live in the analysis code.
-- **No pipeline audit table.** An earlier `pipeline_logs` table was dropped to keep the pipeline simple. A failed zone now stops the run, and reruns are safe thanks to the upsert.
 
 pandas reads from these via `pd.read_sql(query, engine)`, using the shared SQLAlchemy engine from `get_engine()` in `src/pipeline_utils.py`, for the volatility/regression work and the spread/utilization calculations in Section 5. Adding a country later just means more rows in the same three tables — no schema change.
 
@@ -173,81 +160,36 @@ pandas reads from these via `pd.read_sql(query, engine)`, using the shared SQLAl
 
 ## 8. Adding countries later
 
-Deliberately easy by design of this pivot: since day-ahead price and generation-by-type are the same ENTSO-E document types across every zone, adding e.g. France or the Netherlands means:
+Easy by design: since day-ahead price and generation-by-type are the same ENTSO-E document types across every zone, adding e.g. France or the Netherlands means:
 - Look up the bidding zone code (`entsoe-py` ships the country → EIC code mapping already)
 - Add it to the fetch script's zone list
-- No new schema, no new parser, no new auth
-
-Per-zone judgment calls repeat (some countries split into multiple bidding zones — Norway NO1–NO5, Italy, Denmark DK1/DK2), and historical depth varies slightly by zone, but neither is a structural problem. This is also what makes the original brief's "cross-border flow story" stretch goal much more approachable now — flow-between-zones uses the same query pattern with two zone codes instead of one.
+- No new schema, no new parser
 
 ---
 
-## 9. Scheduled pipeline (optional, Section 6 of original brief)
+## 9. Scheduled pipeline
 
-**Rescoped 2026-09-11 — data stays out of the public repo, so the pipeline does too.**
+Demonstrate how to build the fetch/pipeline script into a local cron entry (Linux/Mac) or, since this project's
+dev environment is Windows, Windows Task Scheduler. This is just to mention scheduling in case of portfolio.
 
-Checked ENTSO-E's terms: the datasets used here (day-ahead prices, generation-by-type,
-cross-border flows) are released CC-BY 4.0, so publishing the pulled data on GitHub
-would not have been a legal problem. Decided against it anyway, for repo hygiene —
-a growing SQLite file / CSVs committed on a schedule bloats git history for no real
-benefit. `db/*.db` is gitignored (only `db/schema.sql` is tracked), and so is `data/`,
-which held the Phase 2 CSV cache and has since been dropped from the repo. Anyone who
-wants the data runs the pipeline themselves against their own ENTSO-E API key.
-
-That kills the original plan below it: a **GitHub Actions job that commits
-`db/energy.db` back to the repo** on a schedule has nothing to persist to once the db
-is gitignored — a stateless runner with no commit target isn't useful. Dropped;
-`.github/workflows/scheduled_pipeline.yml` and its Phase 7 stub removed.
-
-**Replacement:** demonstrate the same "this could run unattended" idea as
-**documented local scheduling instructions** instead of a live job — how to wire the
-fetch/pipeline script into a local cron entry (Linux/Mac) or, since this project's
-dev environment is Windows, Windows Task Scheduler. This is a documentation
-deliverable (the portfolio signal is "knows how to automate this"), not an actually
--running scheduled job — no CI secret, no unattended process, nothing to keep
-working over time.
-
-- ENTSO-E's rate limit (400 req/min) is a non-issue for a daily scheduled pull, local or not.
-- The one real setup cost is the API-key email registration — one-time, do it early since turnaround isn't instant.
+The fun version should I have way too much time on my hands is to migrate the project to a cloud based server and schedule it there.
 
 ---
 
 ## 10. Rough build order
 
-1. **Phase 1 — manual exploration (rescoped, complete):** get API access, then prove the mechanics work for all three data shapes at once — day-ahead prices (DE-LU, SE4, SE1), generation-by-source (DE-LU, SE4, reshaped wide→long), and cross-border physical flows (DE-LU↔SE4, both directions) — for one sample week, in `phase_1_exploration/01_entsoe_exploration.ipynb`. Sweden's price/generation pulls, originally slated for Phase 2, happened here instead since there was no reason to wait.
-2. **Phase 2 — quality check + first analysis (rescoped from "expand to Sweden," now redundant per above):** cache the sample pull to disk (`data/processed/`, long-format CSVs matching Section 7's schema) so this and later phases stop re-hitting the API on every run; eyeball data quality (missing timestamps, resolution mismatches — note the API returns 15-min intervals, not hourly as earlier assumed — plausibility of generation values); first informal look at `variable_renewable_share` for both countries before the formal regression in Phase 4.
+1. **Phase 1 — manual exploration (complete):** get API access, then prove the mechanics work for all three data shapes at once — day-ahead prices (DE-LU, SE4, SE1), generation-by-source (DE-LU, SE4, reshaped wide→long), and cross-border physical flows (DE-LU↔SE4, both directions) — for one sample week, in `phase_1_exploration/01_entsoe_exploration.ipynb`.
+2. **Phase 2 — quality check + first analysis (complete):** cache the sample pull to disk (`data/processed/`, long-format CSVs matching Section 7's schema) so this and later phases stop re-hitting the API on every run; eyeball data quality (missing timestamps, resolution mismatches — note the API returns 15-min intervals, not hourly as earlier assumed — plausibility of generation values); first informal look at `variable_renewable_share` for both countries before the formal regression in Phase 4.
 3. **Phase 3 — formalize into SQLite (in progress):** refactor into fetch → transform → load functions writing into the schema in Section 7, reusing the reshape logic from Phase 2. Lands directly in `src/` (see folder-structure note below), not a `phase_3_etl_pipeline/` folder.
-   - **Done so far:** `src/pipeline.py` fetches, reshapes and upserts prices for all five zones, generation for DE_LU and SE_4, and flows for DE_LU↔SE_4 in both directions. Tested on 2026-09-15 to 2026-09-22 with the expected row counts: 673 prices per zone because of the inclusive end, 672 timestamps for generation and flows, 16 production types for DE_LU and 5 for SE_4. Idempotency is confirmed. Run it from the repo root with `python -m src.pipeline`.
+   - **Done so far:** `src/pipeline.py` fetches, reshapes and upserts prices for all five zones, generation for DE_LU and SE_4, and flows for DE_LU↔SE_4 in both directions. Run it from the repo root with `python -m src.pipeline`.
    - **Implementation decisions (2026-09-24/25):**
-     - **SQLAlchemy** (`create_engine("sqlite:///...")`) instead of stdlib `sqlite3`, for consistency with other ETL work.
-     - **`print()` instead of the `logging` module,** and no audit table.
+     - **SQLAlchemy** (`create_engine("sqlite:///...")`) instead of stdlib `sqlite3`, for consistency with other ETL work and flexibility in the DB.
      - **Failures stop the run** instead of being skipped and recorded.
      - **`.env` loaded via `python-dotenv`** in `src/entsoe_client.py`.
      - **Zone scopes as named lists** in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
-   - **Next:** switch from the test week to the real pull window.
-     - **`end` = today's Berlin midnight,** so reruns extend the data to the present and every pulled day is complete.
-     - **`start` = the later of `end − 365 days` and 2025-12-02,** the first date with 15-min data for every series. This is the original rolling window plus a floor; see the resolution note in Section 2.
-     - **The analyses should record the "data as of" date,** since `end` moves with every run.
-     - **After the pull, validate per-day row counts:** 96 per day in every table, 92/100 on DST days.
 4. **Phase 4 — Analysis 1 (volatility vs. renewable share):** the more self-contained of the two core analyses — good to do first. Lands in `analysis/`.
 5. **Phase 5 — Analysis 2 (DE–SE transmission price pressure):** pull cross-border flow data, join against the price tables already in SQLite. Lands in `analysis/`.
 6. **Phase 6 — polish:** flagship Plotly interactive view; Tableau piece if time allows.
 7. **Phase 7 (optional/stretch):** synthetic curves (Section 6); scheduled pipeline (Section 9); additional countries (Section 8).
 
-**Folder structure going forward (decided 2026-09-04):** Phase 1/2's `phase_1_exploration/` and `phase_2_quality_and_first_analysis/` were genuinely exploratory scaffolding — no reason to preserve them as real project structure; they get dropped once no longer needed (git history keeps every version, so no separate archive copy is needed). Phase 3 onward is the *permanent* code, so it lands directly in its final home instead of another disposable `phase_N_*/` folder:
-- `src/` — the ETL pipeline (current `common/` + `phase_3_etl_pipeline/pipeline.py` collapse into here)
-- `analysis/` — the two core analyses (current `phase_4_.../` + `phase_5_.../` collapse into here)
-- `db/`, `data/`, `docs/`, `outputs/` — unchanged
-
-**Update 2026-09-25 (reorg carried out):** `src/` and `analysis/` are in place. Further changes:
-- The Phase 1/2 folders moved to `archive/`, which is gitignored and local only; git history keeps every version.
-- `data/` was dropped. It only held the Phase 2 CSV cache (`data/processed/`) and an unused `data/raw/`; the SQLite database replaces both. It stays gitignored so exports can't be committed by accident.
-- `sql/` was dropped. `queries.sql` only held commented-out examples, one of them for the removed `pipeline_logs` table. SQL lives where it runs: `db/schema.sql`, and `pd.read_sql` in `analysis/`. A deliberate `sql/validation.sql` of data-quality checks could return later if useful.
-- `phase_6_polish/` and `phase_7_stretch_goals/` hold planning notes for later work. They're kept local and gitignored until that work starts, then built into their final homes.
-- Phase numbers stay in this planning doc only, never in code, comments or folder names in the finished repo.
-
-A curated EDA notebook may get added under `notebooks/` in Phase 6 as a portfolio piece, but that's a deliberate late addition, not a preserved copy of the Phase 1 exploration notebook.
-
-**Git workflow for Phase 3 (decided 2026-09-04):** Phases 1–2 committed straight to `main`, which is fine for low-stakes, easily-redone exploratory work. Phase 3 is bigger and more disruptive (the folder reorg above, plus building out the real fetch → transform → load pipeline) and should go through a feature branch instead — partly practical (keeps `main` working throughout), partly a deliberate portfolio signal that the standard branch/PR workflow is understood. Plan: branch off `main` (e.g. `phase-3-pipeline`), do the reorg and pipeline work there, push, open a PR (`gh pr create`) with a real description, self-review the diff on GitHub, merge via **squash and merge**, then delete the branch.
-
-**Time estimate (rough):** single-source, two-country, two-analysis scope — likely comparable to or slightly faster than the original brief's "SE + DE comparison, no ETL/SQL" tier (Section 10 of the original: 2–3.5 weeks solo / 1–1.5 weeks with Claude Code for core-only), since ENTSO-E's uniform schema removes most of the reconciliation overhead that was driving the original estimates up. Add the usual SQL/pipeline formalization time from the original brief's modular table if you want the full ETL layer.
+**Git workflow for Phase 3 (decided 2026-09-04):** Phases 1–2 committed straight to `main`, which is fine for easily-redone exploratory work. Phase 3 is bigger and more disruptive (the folder reorg above, plus building out the real FTL pipeline) and should go through a feature branch instead.
