@@ -13,9 +13,9 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
 ## Questions
 
 1. **Renewables and volatility:** does a higher share of variable renewables
-   (wind + solar) go along with higher day-ahead price volatility?
+   (wind + solar) go along with higher day-ahead price volatility, and is it different in Germany and Sweden?
 2. **Transmission price pressure:** do German (DE-LU) and southern Swedish (SE4)
-   prices decouple when the Baltic Cable between them is congested? The hypothesis here is that the prices stay very close as long as demand can be equalized between the markets.
+   prices decouple when the Baltic Cable between them is congested? The hypothesis here is that the prices stay very close as long as the cable has spare capacity, and drift apart when it's full.
 
 ## Status
 

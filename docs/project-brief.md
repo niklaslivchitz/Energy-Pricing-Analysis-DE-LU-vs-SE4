@@ -1,7 +1,13 @@
 # Project Brief v3
 
 **Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU, in a modular fashion (more markets are easy to add without touching the database). SQLite is up and running.
-**Core question:** How does renewable variability relate to price volatility in Germany, and how does cross-border transmission capacity between Germany and Sweden shape price convergence/divergence?
+**Core question:** How does renewable variability relate to price volatility in Germany and Sweden, and how does cross-border transmission capacity between Germany and Sweden shape price convergence/divergence?
+
+---
+
+## 1. Why ENTSO-E
+
+Only source that gives both countries' prices and generation in one schema, with a free API. Adding more countries later is just a zone code.
 
 ---
 
@@ -42,7 +48,7 @@ What this means over time:
 
 **Bidding zones:**
 - Germany: `DE-LU` — single zone, no ambiguity.
-- Sweden: split into **SE1–SE4**. For the renewable-share/volatility analysis, decide whether to use one reference zone, an average, or all four (worth pulling all four since it's the same cost per extra zone). For the DE–SE transmission analysis specifically, **use SE4** — see below.
+- Sweden: split into **SE1–SE4**. Prices are pulled for all four (cheap), generation and flows only for **SE4**, the zone the Baltic Cable connects to — see below.
 
 ---
 
@@ -64,9 +70,9 @@ This is exactly why **SE4** (not SE3 or a national average) is the right Swedish
 **Methodological note worth stating explicitly in the writeup:** define "renewable share" as **wind + solar specifically**, not all renewables. Hydro (dominant in Sweden) is dispatchable and grid-stabilizing — lumping it in with wind/solar would be confounding the issue, which is about *variable, weather-driven* generation, not renewables in general.
 
 **Steps:**
-1. Pull hourly day-ahead price and generation-by-source for DE-LU and each Swedish zone.
-2. Compute `variable_renewable_share = (wind + solar) / total_generation` per hour, per zone.
-3. Compute a volatility measure — rolling standard deviation of price (e.g. 24-hour window) is the simplest, defensible choice. Also the standard measure in the Energy sector in practice.
+1. Load day-ahead price and generation-by-source for DE-LU and SE4 from the database (15-min).
+2. Compute `variable_renewable_share = (wind + solar) / total_generation` per 15-min, per zone.
+3. Compute a volatility measure — rolling standard deviation of price (e.g. 24-hour window, so 96 values) is the simplest, defensible choice. A common and simple measure in the energy sector.
 4. Regress volatility (or `|price change|`) against `variable_renewable_share`, using `statsmodels.ols()` — e.g. `volatility ~ variable_renewable_share + C(country)` to test whether the relationship differs by country, not just whether it exists.
 5. Compare the fitted relationship for DE vs. SE — the expected story (higher variable-renewable share → higher volatility, more pronounced in DE than SE) is a clean, testable hypothesis with a real physical explanation behind it.
 6. Optional extension: rolling volatility clustering — does it concentrate around solar ramp times (dawn/dusk) more in DE than SE? `statsmodels.graphics.tsaplots.plot_acf()` for autocorrelation, one line.
@@ -88,10 +94,10 @@ Followed up in the same notebook with an OLS regression (`rolling_volatility ~ r
 This is standard price-coupling logic: interconnected markets should converge toward the same price when transfer capacity isn't binding; when the link saturates, the two markets decouple and the spread reflects the congestion cost.
 
 **Steps:**
-1. Pull day-ahead prices for DE-LU and **SE4** specifically.
-2. Pull cross-border physical flow (DE↔SE4) for the same period.
-3. Compute `price_spread = price_SE4 − price_DE-LU` per hour.
-4. Compute `flow_utilization = |actual_flow| / ~600 MW` (Baltic Cable's rated capacity) per hour.
+1. Load day-ahead prices for DE-LU and **SE4** specifically from the database.
+2. Load cross-border physical flow (DE↔SE4) for the same period.
+3. Compute `price_spread = price_SE4 − price_DE-LU` per 15-min.
+4. Compute `flow_utilization = |actual_flow| / capacity` per 15-min (which capacity to use is still open, see below).
 5. Compare `price_spread` distribution when `flow_utilization` is near 1 (congested) vs. well below (uncongested) — a simple bucketed comparison (box plot or distribution overlay) tells the core story before any regression.
 6. Optional: regress `|price_spread|` against `flow_utilization` directly for a continuous version of the same relationship.
 7. Optional: check flow direction — does Sweden mostly export to Germany, or does it vary seasonally (e.g. with German wind output)? This adds a narrative layer about *when* each country needs the other.
@@ -100,7 +106,7 @@ This is standard price-coupling logic: interconnected markets should converge to
 **Methodology refinement (decided 2026-09-10, from Phase 2's first eyeballed look):**
 
 - **Analyze both flow directions separately, not pooled.** Build a signed `net_flow = flow(SE_4→DE_LU) − flow(DE_LU→SE_4)` and split the sample by its sign before doing anything else with it. The two directions are opposite-sign effects, not two halves of one story: when `SE_4→DE_LU` is capped, Sweden's price is held *down* (can't export its surplus into the pricier German market — this is the dominant, more frequent direction in the sample: nonzero 42.4% of the time, mean 80.7 MW, vs. `DE_LU→SE_4`'s 24.6%/43.4 MW, consistent with Sweden being the structurally cheaper zone). When `DE_LU→SE_4` is capped, Sweden's price is held *up* instead (blocked from cheap German imports, e.g. during a German wind glut). Pooling both directions without splitting would average these opposite effects together and wash out both — analyze each direction on its own subset.
-- **The ~600 MW nameplate capacity is not the right divisor for `flow_utilization`.** Checked directly: in the Phase 2 sample week, physical flow plateaus around 216 MW (`SE_4→DE_LU`) and ~204 MW (`DE_LU→SE_4`) — well under the Baltic Cable's rated 600 MW. Test-pulled `entsoe-py`'s `query_net_transfer_capacity_dayahead()` and `query_offered_capacity()` for this border/period to check for an explicit allocated-capacity figure — both returned `NoMatchingDataError` (this border may not publish those document types, being a merchant/privately-owned HVDC link rather than a standard TSO-to-TSO interconnector; or it's just not published for this specific sample period, unclear which without a longer pull). `query_scheduled_exchanges()` *does* work for this border and its plateau (max exactly 216 MW / ~204 MW) matches the physical flow plateau almost exactly — a strong empirical proxy for the effective operating limit even without an explicit capacity document. **Until a real allocated-capacity series is confirmed available (worth re-testing in Phase 3 with a longer date range), use the observed per-period max flow (or the `query_scheduled_exchanges()` plateau) as the `flow_utilization` denominator instead of a flat 600 constant** — dividing by 600 would systematically understate utilization and miss real congestion events that are actually happening well below nameplate capacity.
+- **(Older note, superseded by the re-test below.) The ~600 MW nameplate capacity is not the right divisor for `flow_utilization`.** Checked directly: in the Phase 2 sample week, physical flow plateaus around 216 MW (`SE_4→DE_LU`) and ~204 MW (`DE_LU→SE_4`) — well under the Baltic Cable's rated 600 MW. Test-pulled `entsoe-py`'s `query_net_transfer_capacity_dayahead()` and `query_offered_capacity()` for this border/period to check for an explicit allocated-capacity figure — both returned `NoMatchingDataError` (this border may not publish those document types, being a merchant/privately-owned HVDC link rather than a standard TSO-to-TSO interconnector; or it's just not published for this specific sample period, unclear which without a longer pull). `query_scheduled_exchanges()` *does* work for this border and its plateau (max exactly 216 MW / ~204 MW) matches the physical flow plateau almost exactly — a strong empirical proxy for the effective operating limit even without an explicit capacity document. **Until a real allocated-capacity series is confirmed available (worth re-testing in Phase 3 with a longer date range), use the observed per-period max flow (or the `query_scheduled_exchanges()` plateau) as the `flow_utilization` denominator instead of a flat 600 constant** — dividing by 600 would systematically understate utilization and miss real congestion events that are actually happening well below nameplate capacity.
 - **Capacity re-test (2026-09-25), deferred for now:** re-probed the capacity endpoints for DE_LU↔SE_4 on 2026-09-15. Day-ahead NTC, daily offered capacity and intraday offered capacity still return `NoMatchingDataError`. A likely reason, not verified: the Nordic region moved to flow-based market coupling in late 2024, which doesn't produce a simple per-border NTC. **Week-ahead and month-ahead NTC do return data**, one value per period: 600 MW DE→SE4 and 615 MW SE4→DE, essentially nameplate. `query_scheduled_exchanges(dayahead=True)` returns 15-min schedules. Physical flows in the September test week peak around **420–433 MW**, so the ~217 MW plateau in the January sample was a temporary reduction (maintenance or grid constraints), not a permanent cap. The effective limit varies over time. Options for defining congestion, to decide at the start of Analysis 2: (a) utilization against week-ahead NTC; (b) price-based congestion (in coupled markets, equal DE_LU/SE_4 prices mean the cable isn't binding, but this is circular if the question is whether the spread widens under congestion); (c) an empirical rolling-max capacity estimate. Capacity data isn't pulled yet. Because the pipeline's upsert is idempotent, it can be added as a fourth table later and backfilled.
 - **Test statistically, not just by eyeballing a plot.** Bucket congestion via a `flow_utilization` threshold (e.g. `>0.9`) and compare `price_spread` between congested/uncongested groups with `scipy.stats.mannwhitneyu` (non-parametric — power prices are spiky/non-normal, a t-test's assumptions don't hold) rather than eyeballing a box plot alone. Also fit the continuous version already listed as optional in step 6 above — `statsmodels.OLS(spread ~ flow_utilization)` — for a slope/R²/p-value rather than just a two-bucket difference. Caveat that matters for credibility: 15-minute data is heavily autocorrelated, so naive OLS/Mann-Whitney standard errors overstate the evidence (effective independent sample size is much smaller than row count). Phase 2's informal pass can run the naive test with this caveat stated explicitly; this formal Phase 5 version should use HAC-robust standard errors (`statsmodels`, `cov_type='HAC'`, `maxlags` ~96 for a 24h dependency horizon) before trusting any p-value.
 
@@ -178,18 +184,18 @@ The fun version should I have way too much time on my hands is to migrate the pr
 
 ## 10. Rough build order
 
-1. **Phase 1 — manual exploration (complete):** get API access, then prove the mechanics work for all three data shapes at once — day-ahead prices (DE-LU, SE4, SE1), generation-by-source (DE-LU, SE4, reshaped wide→long), and cross-border physical flows (DE-LU↔SE4, both directions) — for one sample week, in `phase_1_exploration/01_entsoe_exploration.ipynb`.
+1. **Phase 1 — manual exploration (complete):** get API access, then prove the mechanics work for all three data shapes at once — day-ahead prices (DE-LU, SE4, SE1), generation-by-source (DE-LU, SE4, reshaped wide→long), and cross-border physical flows (DE-LU↔SE4, both directions) — for one sample week, in `archive/phase_1_exploration/01_entsoe_exploration.ipynb` (local only now).
 2. **Phase 2 — quality check + first analysis (complete):** cache the sample pull to disk (`data/processed/`, long-format CSVs matching Section 7's schema) so this and later phases stop re-hitting the API on every run; eyeball data quality (missing timestamps, resolution mismatches — note the API returns 15-min intervals, not hourly as earlier assumed — plausibility of generation values); first informal look at `variable_renewable_share` for both countries before the formal regression in Phase 4.
-3. **Phase 3 — formalize into SQLite (in progress):** refactor into fetch → transform → load functions writing into the schema in Section 7, reusing the reshape logic from Phase 2. Lands directly in `src/` (see folder-structure note below), not a `phase_3_etl_pipeline/` folder.
-   - **Done so far:** `src/pipeline.py` fetches, reshapes and upserts prices for all five zones, generation for DE_LU and SE_4, and flows for DE_LU↔SE_4 in both directions. Run it from the repo root with `python -m src.pipeline`.
+3. **Phase 3 — formalize into SQLite (complete):** refactor into fetch → transform → load functions writing into the schema in Section 7, reusing the reshape logic from Phase 2. Lands directly in `src/`.
+   - **Done:** `src/pipeline.py` fetches, reshapes and upserts prices for all five zones, generation for DE_LU and SE_4, and flows for DE_LU↔SE_4 in both directions. Run it from the repo root with `python -m src.pipeline`. Full pull from 2025-12-02 done and checked: no missing days, no NULLs, reruns don't duplicate. Merged to `main` via PR #1.
    - **Implementation decisions (2026-09-24/25):**
      - **SQLAlchemy** (`create_engine("sqlite:///...")`) instead of stdlib `sqlite3`, for consistency with other ETL work and flexibility in the DB.
      - **Failures stop the run** instead of being skipped and recorded.
      - **`.env` loaded via `python-dotenv`** in `src/entsoe_client.py`.
      - **Zone scopes as named lists** in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
 4. **Phase 4 — Analysis 1 (volatility vs. renewable share):** the more self-contained of the two core analyses — good to do first. Lands in `analysis/`.
-5. **Phase 5 — Analysis 2 (DE–SE transmission price pressure):** pull cross-border flow data, join against the price tables already in SQLite. Lands in `analysis/`.
+5. **Phase 5 — Analysis 2 (DE–SE transmission price pressure):** join the flow and price tables already in SQLite. Lands in `analysis/`.
 6. **Phase 6 — polish:** flagship Plotly interactive view; Tableau piece if time allows.
 7. **Phase 7 (optional/stretch):** synthetic curves (Section 6); scheduled pipeline (Section 9); additional countries (Section 8).
 
-**Git workflow for Phase 3 (decided 2026-09-04):** Phases 1–2 committed straight to `main`, which is fine for easily-redone exploratory work. Phase 3 is bigger and more disruptive (the folder reorg above, plus building out the real FTL pipeline) and should go through a feature branch instead.
+**Git workflow for Phase 3 (decided 2026-09-04):** Phases 1–2 committed straight to `main`, which is fine for easily-redone exploratory work. Phase 3 is bigger and more disruptive (the folder reorg above, plus building out the real ETL pipeline) and should go through a feature branch instead.
