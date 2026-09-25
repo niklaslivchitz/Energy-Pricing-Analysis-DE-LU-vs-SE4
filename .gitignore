@@ -20,6 +20,14 @@ venv/
 
 # os
 .DS_Store
+.claude
 
 #visual studio
 .vscode/*
+
+#archive
+archive
+
+# planning notes for later work, kept local
+phase_6_polish/
+phase_7_stretch_goals/

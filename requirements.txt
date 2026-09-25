@@ -1,7 +1,7 @@
 entsoe-py
 pandas
 statsmodels
-scikit-learn
 seaborn
 plotly
-jupyter
+python-dotenv
+sqlalchemy
