@@ -1,67 +1,89 @@
 """
-Phase 3: formalize Phases 1-2 into a proper fetch -> transform -> load
-pipeline writing into SQLite, with the logging/retry/idempotency helpers
-from src/pipeline_utils.py.
-
-This is the "halfway point" per the brief's build order - once this runs
-cleanly for all five zones (DE-LU + SE1-SE4), Phases 4-5 read from
-db/energy.db instead of re-fetching from the API each time.
-
-Run: python src/pipeline.py
+This is the ETL pipeline script for fetching and loading energy data into a SQLite database.
+A bunch of supporting functions are defined in pipeline_utils.py, which is imported here.
+Run from repo root: python -m src.pipeline
 """
-import sqlite3
-import uuid
 from pathlib import Path
 
 import pandas as pd
 
-from src.entsoe_client import get_client, ZONE_DE, ZONES_SE
-from src.pipeline_utils import fetch_with_retry, upsert_dataframe, log_pipeline_run, logger
+from src.entsoe_client import get_client, PRICE_ZONES, GENERATION_ZONES, FLOW_PAIRS
+from src.pipeline_utils import fetch_with_retry, upsert_dataframe, get_engine, to_utc_str
 
-DB_PATH = str(Path(__file__).resolve().parents[1] / "db" / "energy.db")
+
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
 
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    with open(SCHEMA_PATH) as f:
-        conn.executescript(f.read())
-    conn.commit()
-    conn.close()
-
-
-def fetch_and_load_prices(client, zone, start, end, run_id):
+def init_db(engine):
+    conn = engine.raw_connection()
     try:
-        prices = fetch_with_retry(client.query_day_ahead_prices, zone, start=start, end=end)
-        df = pd.DataFrame({
-            "zone": zone,
-            "timestamp": prices.index.astype(str),
-            "price_eur_mwh": prices.values,
-        })
-        upsert_dataframe(df, "prices", ["zone", "timestamp"], DB_PATH)
-        log_pipeline_run(DB_PATH, run_id, zone, "prices", len(df), "success")
-    except Exception as e:
-        log_pipeline_run(DB_PATH, run_id, zone, "prices", 0, "failed", str(e))
-        logger.error(f"Skipping {zone} prices after retries exhausted: {e}")
+        with open(SCHEMA_PATH) as f:
+            conn.executescript(f.read())
+    finally:
+        conn.close()
+
+#For all the fetch_and_load functions, we will use the fetch_with_retry() function to handle retries. We find it in pipeline_utils.
+
+def fetch_and_load_prices(client, engine, zone, start, end):
+    """Fetch day-ahead prices for a given zone and load them into the database."""
+    prices = fetch_with_retry(client.query_day_ahead_prices, zone, start=start, end=end)
+    df = pd.DataFrame({
+        "zone": zone,
+        "timestamp": to_utc_str(prices.index),
+        "price_eur_mwh": prices.values,
+    })
+    upsert_dataframe(df, "prices", ["zone", "timestamp"], engine)
 
 
-# TODO: fetch_and_load_generation() and fetch_and_load_flows(), same pattern -
-# fetch_with_retry -> reshape to long format -> upsert_dataframe -> log_pipeline_run.
-# See phase_1/phase_2 scripts for the raw entsoe-py calls to reshape from.
+def to_long(gen_df, zone):
+    """This is a function that takes a generation dataframe and a zone name, and reshapes it into long format with the right column names for the database."""
+    long = (
+        gen_df.rename_axis("timestamp")
+        .reset_index()
+        .melt(id_vars="timestamp", var_name="production_type", value_name="value_mw")
+    )
+    long["zone"] = zone
+    long["timestamp"] = to_utc_str(long["timestamp"])
+    return long[["zone", "timestamp", "production_type", "value_mw"]]
+
+
+def fetch_and_load_generation(client, engine, zone, start, end):
+    """Fetch generation data for a given zone and load them into the database."""
+    gen = fetch_with_retry(client.query_generation, zone, start=start, end=end, nett=True)
+    df = to_long(gen, zone)
+    upsert_dataframe(df, "generation", ["zone", "timestamp", "production_type"], engine)
+
+
+def fetch_and_load_flows(client, engine, zone_from, zone_to, start, end):
+    """Fetch cross-border flow data for a given pair of zones and load them into the database."""
+    flows = fetch_with_retry(client.query_crossborder_flows, zone_from, zone_to, start=start, end=end)
+    df = pd.DataFrame({
+        "zone_from": zone_from,
+        "zone_to": zone_to,
+        "timestamp": to_utc_str(flows.index),
+        "flow_mw": flows.values,
+    })
+    upsert_dataframe(df, "cross_border_flows", ["zone_from", "zone_to", "timestamp"], engine)
 
 
 def run_pipeline(start, end):
-    init_db()
+    engine = get_engine()
+    init_db(engine)
     client = get_client()
-    run_id = str(uuid.uuid4())
-    for zone in [ZONE_DE] + ZONES_SE:
-        logger.info(f"Processing zone: {zone}")
-        fetch_and_load_prices(client, zone, start, end, run_id)
-    logger.info("Pipeline run complete.")
+    for zone in PRICE_ZONES:
+        print(f"Processing prices for zone: {zone}")
+        fetch_and_load_prices(client, engine, zone, start, end)
+    for zone in GENERATION_ZONES:
+        print(f"Processing generation for zone: {zone}")
+        fetch_and_load_generation(client, engine, zone, start, end)
+    for zone_from, zone_to in FLOW_PAIRS:
+        print(f"Processing flows for: {zone_from} -> {zone_to}")
+        fetch_and_load_flows(client, engine, zone_from, zone_to, start, end)
+    print("Pipeline run complete.")
 
 
 if __name__ == "__main__":
     run_pipeline(
-        start=pd.Timestamp("2024-01-01", tz="Europe/Berlin"),
-        end=pd.Timestamp("2024-01-08", tz="Europe/Berlin"),
+        start=pd.Timestamp("2026-09-15", tz="Europe/Berlin"),
+        end=pd.Timestamp("2026-09-22", tz="Europe/Berlin"),
     )

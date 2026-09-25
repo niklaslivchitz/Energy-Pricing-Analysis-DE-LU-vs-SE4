@@ -1,13 +1,13 @@
 """
-Shared ENTSO-E client setup. Used from every phase from Phase 1 onward.
-
-Reads ENTSOE_API_KEY from environment (.env). See docs/project-brief.md
-Section 2 for registration steps and rate limit notes (400 req/min - a
-non-issue at this project's scale, see the retry pacing in
-common/pipeline_utils.py for why we still throttle a little anyway).
+Shared ENTSO-E client setup and bidding zone constants.
+It might be unnecessary to have a separate file for this, but it now exists for learning purposes.
 """
 import os
-from entsoe import EntsoePandasClient
+
+from dotenv import load_dotenv
+from entsoe import EntsoePandasClient # type: ignore
+
+load_dotenv()  # reads .env and loads its variables into the environment
 
 
 def get_client() -> EntsoePandasClient:
@@ -17,7 +17,16 @@ def get_client() -> EntsoePandasClient:
     return EntsoePandasClient(api_key=api_key)
 
 
-# Bidding zones used across this project (brief Sections 2-3)
+# Bidding zones used across this project. Modifying this will change the data fetched. The database easily handles more zones, but the analysis code is written for these specific zones.
 ZONE_DE = "DE_LU"
+ZONE_SE4 = "SE_4"
 ZONES_SE = ["SE_1", "SE_2", "SE_3", "SE_4"]
-BALTIC_CABLE_CAPACITY_MW = 600  # DE <-> SE4 physical link, see brief Section 3
+
+# What gets fetched for which zone
+PRICE_ZONES = [ZONE_DE] + ZONES_SE         # all five: cheap, one request per zone
+GENERATION_ZONES = [ZONE_DE, ZONE_SE4]     # the two zones Analysis 1 compares
+FLOW_PAIRS = [                             # Baltic Cable, both directions
+    (ZONE_DE, ZONE_SE4),
+    (ZONE_SE4, ZONE_DE),
+]
+BALTIC_CABLE_CAPACITY_MW = 600  # DE <-> SE4 physical link, in practice run seems to be capped at 200 something SE->DE, but I cannot find why. ENTSO-E data shows 600 MW as the max, so we use that for now.

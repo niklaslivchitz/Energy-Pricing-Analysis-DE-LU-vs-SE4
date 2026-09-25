@@ -20,6 +20,10 @@ venv/
 
 # os
 .DS_Store
+.claude
 
 #visual studio
 .vscode/*
+
+#archive
+archive
