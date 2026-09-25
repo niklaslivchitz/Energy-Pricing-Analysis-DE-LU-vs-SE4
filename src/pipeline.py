@@ -12,12 +12,13 @@ from src.pipeline_utils import fetch_with_retry, upsert_dataframe, get_engine, t
 
 
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
+EARLIEST_START = pd.Timestamp("2025-12-02", tz="Europe/Berlin") # First date ENTSO-E has 15-minute data for every series we pull (SE_4 generation switched last).
 
 
 def init_db(engine):
     conn = engine.raw_connection()
     try:
-        with open(SCHEMA_PATH) as f:
+        with open(SCHEMA_PATH, encoding="utf-8") as f:
             conn.executescript(f.read())
     finally:
         conn.close()
@@ -83,7 +84,7 @@ def run_pipeline(start, end):
 
 
 if __name__ == "__main__":
-    run_pipeline(
-        start=pd.Timestamp("2026-09-15", tz="Europe/Berlin"),
-        end=pd.Timestamp("2026-09-22", tz="Europe/Berlin"),
-    )
+    end = pd.Timestamp.now(tz="Europe/Berlin").normalize() #We pull data up to midnight today in Berlin time.
+    start = max(end - pd.Timedelta(days=365), EARLIEST_START)  # Fetch data for the last year, but not before the earliest start date.
+    print(f"Pulling {start} to {end}")
+    run_pipeline(start, end)

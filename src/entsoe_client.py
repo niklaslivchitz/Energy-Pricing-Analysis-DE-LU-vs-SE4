@@ -29,4 +29,4 @@ FLOW_PAIRS = [                             # Baltic Cable, both directions
     (ZONE_DE, ZONE_SE4),
     (ZONE_SE4, ZONE_DE),
 ]
-BALTIC_CABLE_CAPACITY_MW = 600  # DE <-> SE4 physical link, in practice run seems to be capped at 200 something SE->DE, but I cannot find why. ENTSO-E data shows 600 MW as the max, so we use that for now.
+BALTIC_CABLE_CAPACITY_MW = 600  # DE <-> SE4 nameplate capacity. The usable limit varies over time (flows capped around 217 MW in Jan 2026, up to ~433 MW in Sep 2026), see brief Section 5.

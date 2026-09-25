@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine # pyright: ignore[reportCallIssue]
+from sqlalchemy.engine import Engine
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB_PATH = REPO_ROOT / "db" / "energy.db"
@@ -41,6 +41,7 @@ def fetch_with_retry(fetch_func, *args, max_retries=3, retry_delay=5,
             if attempt == max_retries:
                 raise
             time.sleep(retry_delay * attempt)
+    raise RuntimeError("fetch_with_retry called with max_retries < 1")
 
 
 def upsert_dataframe(df: pd.DataFrame, table_name: str, key_cols: list[str], engine: Engine):
@@ -63,5 +64,6 @@ def upsert_dataframe(df: pd.DataFrame, table_name: str, key_cols: list[str], eng
     records = df.astype(object).where(df.notna(), None).to_dict("records")
 
     with engine.begin() as conn:
-        conn.execute(sql, records) # pyright: ignore
+        # pandas types to_dict() keys as Hashable, SQLAlchemy wants str - our columns are all str
+        conn.execute(sql, records)  # pyright: ignore[reportCallIssue]
     print(f"Upserted {len(df)} rows into {table_name}")

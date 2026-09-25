@@ -27,7 +27,24 @@ Originally scoped as a two-source build (SCB for Sweden, SMARD for Germany), but
 | Cross-border physical flows | 15-min flow between two zones, one direction per query | `query_crossborder_flows()` |
 | (Optional, not pulled yet) Transfer capacity / scheduled exchanges | Cross-border capacity and planned commercial exchange | `query_net_transfer_capacity_weekahead()`, `query_scheduled_exchanges()` (see Section 5) |
 
-**Resolution note:** the data comes at 15-minute resolution, not hourly as this brief originally assumed. The EU day-ahead market (SDAC) moved from hourly to 15-minute products around 1 October 2025 (worth double-checking the exact date), so a pull reaching back before that mixes resolutions in the same table.
+**Resolution note (checked against the API 2026-09-25):** current data comes at 15-minute resolution, not hourly as this brief originally assumed. The switch happened at different dates per data type:
+
+| Data | Hourly until | 15-min from |
+|---|---|---|
+| Day-ahead prices (DE_LU, SE_4) | 2025-09-30 | 2025-10-01 (the SDAC switch to 15-min products) |
+| Cross-border flows (DE_LU↔SE_4) | 2025-09-29 | 2025-09-30 |
+| Generation DE_LU | — | 15-min throughout |
+| Generation SE_4 | 2025-12-01 | 2025-12-02 |
+
+**Decision (2026-09-25): a rolling one-year window with a floor at 2025-12-02,** the first date with 15-min data for every series.
+- **`end`** = today's Berlin midnight.
+- **`start`** = the later of `end − 365 days` and 2025-12-02.
+
+What this means over time:
+- **Until December 2026,** the floor applies: about 10 months of uniformly 15-min data. October and November are missing, so the seasonal cycle is incomplete. The write-up should state this when discussing seasonal effects, if the analysis runs on data from before then.
+- **From December 2026,** the rolling year takes over automatically, with no code change: a full, uniform year with a complete seasonal cycle.
+- **All three tables are always uniformly 15-min,** so neither the pipeline nor the analyses need resolution handling.
+- **Alternative considered and rejected:** a full rolling year stored at native resolution, with Analysis 1 resampled to hourly. It gives a complete seasonal cycle today, but every analysis would have to handle mixed resolution.
 
 **Bidding zones:**
 - Germany: `DE-LU` — single zone, no ambiguity.
@@ -207,7 +224,11 @@ working over time.
      - **Failures stop the run** instead of being skipped and recorded.
      - **`.env` loaded via `python-dotenv`** in `src/entsoe_client.py`.
      - **Zone scopes as named lists** in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
-   - **Next:** switch from the test week to a **rolling 365-day window**: `end` = today's Berlin midnight, `start = end − 365 days`, so reruns always reflect current data and every pulled day is complete. The analyses should record the "data as of" date. Open question: whether to floor `start` at 2025-10-01 to avoid mixed hourly/15-min resolution (see Section 2). After the pull, validate per-day row counts (96 per day, 92/100 on DST days).
+   - **Next:** switch from the test week to the real pull window.
+     - **`end` = today's Berlin midnight,** so reruns extend the data to the present and every pulled day is complete.
+     - **`start` = the later of `end − 365 days` and 2025-12-02,** the first date with 15-min data for every series. This is the original rolling window plus a floor; see the resolution note in Section 2.
+     - **The analyses should record the "data as of" date,** since `end` moves with every run.
+     - **After the pull, validate per-day row counts:** 96 per day in every table, 92/100 on DST days.
 4. **Phase 4 — Analysis 1 (volatility vs. renewable share):** the more self-contained of the two core analyses — good to do first. Lands in `analysis/`.
 5. **Phase 5 — Analysis 2 (DE–SE transmission price pressure):** pull cross-border flow data, join against the price tables already in SQLite. Lands in `analysis/`.
 6. **Phase 6 — polish:** flagship Plotly interactive view; Tableau piece if time allows.

@@ -23,7 +23,13 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
 - **ETL pipeline:** working. It fetches day-ahead prices (DE-LU, SE1–SE4),
   generation by source (DE-LU, SE4) and cross-border flows (DE-LU ↔ SE4) at
   15-minute resolution, and upserts them into SQLite. Reruns are idempotent.
-- **Next:** a full one-year pull, then both analyses.
+- **Data window:** a rolling year up to the latest complete day, but never
+  earlier than 2025-12-02, the first date ENTSO-E publishes every series here
+  at 15-minute resolution. That keeps all data at one uniform resolution. Until
+  December 2026 the window is shorter than a year, so it doesn't yet cover a
+  full seasonal cycle (October–November are missing); after that it's a full
+  year automatically.
+- **Next:** the full pull, then both analyses.
 - **Early finding (provisional, one sample week):** renewable share came out
   *negatively* correlated with price volatility in both zones, the opposite of
   the starting hypothesis. The full-year data will show whether this holds.
