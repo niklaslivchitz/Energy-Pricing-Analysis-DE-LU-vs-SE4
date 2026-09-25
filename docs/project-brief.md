@@ -173,9 +173,9 @@ Checked ENTSO-E's terms: the datasets used here (day-ahead prices, generation-by
 cross-border flows) are released CC-BY 4.0, so publishing the pulled data on GitHub
 would not have been a legal problem. Decided against it anyway, for repo hygiene —
 a growing SQLite file / CSVs committed on a schedule bloats git history for no real
-benefit. `data/raw/`, `data/processed/`, and `db/*.db` are already gitignored (only
-`.gitkeep` placeholders and `db/schema.sql` are tracked); anyone who wants the data
-runs the fetch/pipeline script themselves against their own ENTSO-E API key.
+benefit. `db/*.db` is gitignored (only `db/schema.sql` is tracked), and so is `data/`,
+which held the Phase 2 CSV cache and has since been dropped from the repo. Anyone who
+wants the data runs the pipeline themselves against their own ENTSO-E API key.
 
 That kills the original plan below it: a **GitHub Actions job that commits
 `db/energy.db` back to the repo** on a schedule has nothing to persist to once the db
@@ -220,6 +220,7 @@ working over time.
 
 **Update 2026-09-25 (reorg carried out):** `src/` and `analysis/` are in place. Further changes:
 - The Phase 1/2 folders moved to `archive/`, which is gitignored and local only; git history keeps every version.
+- `data/` was dropped. It only held the Phase 2 CSV cache (`data/processed/`) and an unused `data/raw/`; the SQLite database replaces both. It stays gitignored so exports can't be committed by accident.
 - `sql/` was dropped. `queries.sql` only held commented-out examples, one of them for the removed `pipeline_logs` table. SQL lives where it runs: `db/schema.sql`, and `pd.read_sql` in `analysis/`. A deliberate `sql/validation.sql` of data-quality checks could return later if useful.
 - `phase_6_polish/` and `phase_7_stretch_goals/` hold planning notes for later work. They're kept local and gitignored until that work starts, then built into their final homes.
 - Phase numbers stay in this planning doc only, never in code, comments or folder names in the finished repo.
