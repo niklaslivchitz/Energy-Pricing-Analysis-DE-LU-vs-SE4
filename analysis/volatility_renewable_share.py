@@ -1,25 +1,20 @@
 
 """
-Each function does one step and returns its result, and a main() at the bottom calls them in order, as in src/pipeline.py:
-
-Function	Takes	Returns
-load_prices, load_generation	the engine	a dataframe with parsed timestamps
-compute_shares	generation	zone, timestamp, wind, solar and combined share
-build_daily_table	prices and shares	one row per zone per day
-build_hourly_table	prices	one row per zone per hour of day
-one plot_... function per figure	a table	nothing; it saves the PNG
-fit_model	a table and a formula	the fitted result
+This is the main analytical engine for the renewable share and price volatility analysis.
+It loads the data from the database, computes the daily volatility and renewable shares, fits regression models, and saves the results to files.
+Run the script from repo root with `python -m analysis.volatility_renewable_share`.
 """
 
-from pathlib import Path
-import sys
-sys.path.append("..") #notebook workaround for relative imports - not needed in the final script file
+import numpy as np  # used inside the log formula
 import pandas as pd
 import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from src.entsoe_client import GENERATION_ZONES
-import numpy as np  # used inside the log formula
 from src.pipeline_utils import get_engine, REPO_ROOT
 
+FIGURES_DIR = REPO_ROOT / "outputs" / "figures"
 TABLES_DIR = REPO_ROOT / "outputs" / "tables"
 
 ZONE_FORMULAS = {
@@ -52,7 +47,7 @@ def compute_shares(generation):
     wide["wind_share"] = wide[["Wind Onshore", "Wind Offshore"]].sum(axis=1) / total
     wide["solar_share"] = wide["Solar"] / total
     wide["renewables_share"] = wide["wind_share"] + wide["solar_share"]
-    return wide[["zone", "timestamp", "wind_share", "solar_share", "renewables_share"]]s
+    return wide[["zone", "timestamp", "wind_share", "solar_share", "renewables_share"]]
 
     
 def build_daily_table(prices, shares):
@@ -93,9 +88,65 @@ def fit_model(table, formula):
     """
     return smf.ols(formula, data=table).fit(cov_type="HAC", cov_kwds={"maxlags": 7})
 
+def plot_daily_volatility(daily):
+    """Time series of daily price volatility, one line per zone."""
+    fig, ax = plt.subplots(figsize=(12, 5))
+    sns.lineplot(data=daily, x="date", y="volatility", hue="zone", ax=ax)
+    ax.set_title("Daily price volatility")
+    ax.set_xlabel("")
+    ax.set_ylabel("Std of price within the day (EUR/MWh)")
+    fig.savefig(FIGURES_DIR / "volatility_daily.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_volatility_vs_share(daily, share_column):
+    """Scatter of daily volatility against one share column, e.g. 'solar_share'."""
+    label = share_column.replace("_", " ")
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.scatterplot(data=daily, x=share_column, y="volatility", hue="zone", alpha=0.6, ax=ax)
+    ax.set_title(f"Daily price volatility vs {label}")
+    ax.set_xlabel(f"{label.capitalize()} of generation (daily mean)")
+    ax.set_ylabel("Std of price within the day (EUR/MWh)")
+    fig.savefig(FIGURES_DIR / f"volatility_vs_{share_column}.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_solar_fit(daily):
+    """Volatility against solar share with one fitted line per zone (solar-only OLS, no HAC)."""
+    g = sns.lmplot(
+        data=daily, x="solar_share", y="volatility", hue="zone",
+        height=6, aspect=1.6, ci=None, scatter_kws={"alpha": 0.5},
+    )
+    g.set_axis_labels("Solar share of generation (daily mean)", "Std of price within the day (EUR/MWh)")
+    g.ax.set_title("Daily price volatility vs solar share, with fitted lines")
+    g.savefig(FIGURES_DIR / "volatility_vs_solar_share_fit.png", dpi=150, bbox_inches="tight")
+    plt.close(g.figure)
+
+
+def plot_solar_fit_by_month(daily):
+    """The solar fit split into one panel per month, to show the pattern within seasons."""
+    g = sns.lmplot(
+        data=daily, x="solar_share", y="volatility", hue="zone", col="month", col_wrap=4,
+        height=3, ci=None, scatter_kws={"alpha": 0.5},
+    )
+    g.set_axis_labels("Solar share (daily mean)", "Std of price within the day (EUR/MWh)")
+    g.savefig(FIGURES_DIR / "volatility_vs_solar_share_by_month.png", dpi=150, bbox_inches="tight")
+    plt.close(g.figure)
+
+
+def plot_price_by_hour(hourly):
+    """Average price at each hour of the day, one line per zone."""
+    fig, ax = plt.subplots(figsize=(10, 5))
+    sns.lineplot(data=hourly, x="hour", y="price_eur_mwh", hue="zone", marker="o", ax=ax)
+    ax.set_title("Average day-ahead price by hour of day")
+    ax.set_xlabel("Hour of day (local time)")
+    ax.set_ylabel("Mean price (EUR/MWh)")
+    fig.savefig(FIGURES_DIR / "price_by_hour.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
 def main():
     """
-    This runs the whole analysis, saving the daily and hourly tables, the Spearman correlations and the regression results to text files.
+    This runs the whole analysis, saving the daily and hourly tables, the Spearman correlations and the regression results to text files, and the plots to image files.
     """
     engine = get_engine()
     prices = load_prices(engine, GENERATION_ZONES)
@@ -127,6 +178,13 @@ def main():
     print("pooled")
     print(result.summary())
     (TABLES_DIR / "regression_pooled.txt").write_text(result.summary().as_text())
+
+    plot_daily_volatility(daily)
+    plot_volatility_vs_share(daily, "solar_share")
+    plot_volatility_vs_share(daily, "wind_share")
+    plot_solar_fit(daily)
+    plot_solar_fit_by_month(daily)
+    plot_price_by_hour(hourly)
 
 
 if __name__ == "__main__":

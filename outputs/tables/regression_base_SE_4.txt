@@ -1,0 +1,26 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             volatility   R-squared:                       0.166
+Model:                            OLS   Adj. R-squared:                  0.161
+Method:                 Least Squares   F-statistic:                     24.89
+Date:                Fri, 09 Oct 2026   Prob (F-statistic):           9.61e-11
+Time:                        16:54:12   Log-Likelihood:                -1334.9
+No. Observations:                 309   AIC:                             2676.
+Df Residuals:                     306   BIC:                             2687.
+Df Model:                           2                                         
+Covariance Type:                  HAC                                         
+===============================================================================
+                  coef    std err          z      P>|z|      [0.025      0.975]
+-------------------------------------------------------------------------------
+Intercept      38.2592      6.575      5.819      0.000      25.373      51.146
+solar_share    60.8029     12.181      4.991      0.000      36.928      84.678
+wind_share    -15.4103      9.232     -1.669      0.095     -33.505       2.684
+==============================================================================
+Omnibus:                       85.193   Durbin-Watson:                   1.275
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              248.130
+Skew:                           1.238   Prob(JB):                     1.32e-54
+Kurtosis:                       6.625   Cond. No.                         14.0
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 7 lags and without small sample correction
