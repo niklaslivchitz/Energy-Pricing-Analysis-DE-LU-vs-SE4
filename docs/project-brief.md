@@ -1,6 +1,6 @@
 # Project Brief v3
 
-**Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU. It's built so more markets are easy to add without touching the database. SQLite is up and running.
+**Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU. It's built so more markets are easy to add without touching the database. SQLite is up and running. Analysis 1 (price swings vs. wind and solar) is done, see Section 4. Analysis 2 (the cable) is next.
 **Core question:** How does the share of wind and solar power relate to how much prices jump around, in Germany and Sweden? And how does the cable between Germany and Sweden affect whether their prices move together or apart?
 
 ---
@@ -76,7 +76,27 @@ That's why **SE4** is the right Swedish zone for the cable analysis: it's the zo
 6. Optional: do the price swings bunch up around sunrise and sunset (when solar ramps up and down), more in Germany than Sweden?
 7. **Daily price gap (added 2026-09-10):** per day, the price at the most expensive hours minus the cheapest hours, per zone. Simple and likely to show a clear DE vs. SE difference: Germany's midday price dip from solar ("duck curve") should be much sharper than Sweden's flatter prices. Uses data we already have.
 
-**First look from the Phase 2 sample week (2026-09-10, not final):** the result came out the *opposite* way from the hypothesis. The correlation between wind/solar share and price swings was **DE_LU ≈ −0.50, SE_4 ≈ −0.57**: more wind and solar went with *calmer* prices, not wilder ones. (Done in the Phase 2 notebook, `archive/phase_2_quality_and_first_analysis/phase_2_quality_analysis.ipynb`, local only now and still in git history.)
+**Result (2026-10-09, data from 2025-12-02 to 2026-10-05):** done in `analysis/volatility_renewable_share.py`. Tables are in `outputs/tables/`, charts in `outputs/figures/`.
+
+What changed from the steps above:
+- **One value per day instead of a rolling window.** Volatility is the standard deviation of the 96 prices within a day, and the shares are daily averages. The rolling 24-hour windows overlap almost completely, so they gave trails instead of separate observations.
+- **Wind and solar are split.** The combined share showed almost nothing (correlation +0.25 in DE_LU, −0.05 in SE_4), because wind and solar work in opposite directions and cancel out.
+- **Negative pumped storage is set to zero** before summing total generation. Pumping uses power, it isn't generation.
+
+What came out (regressions with HAC standard errors, 7 daily lags):
+- **Solar goes with bigger price swings in Germany.** Correlation +0.74. 10 percentage points more solar goes with about 18 EUR/MWh more volatility (p < 0.001). Still there with the month as a control (about 23 EUR/MWh) and with the logarithm of volatility, so it isn't just the season or a few extreme days.
+- **Wind shows no effect in Germany** once solar is in the model (p = 0.86). The −0.34 correlation for wind comes from windy days being less sunny.
+- **In SE_4 the solar effect is a third as big, and it's gone with the month as a control** (p = 0.75), so there it was the season. Within a month, windier days in SE_4 have calmer prices (about 3.4 EUR/MWh less per 10 points of wind, p = 0.002).
+- **The difference between the zones is real** for solar (p < 0.001 in the pooled model), not for wind (p = 0.24).
+- **The mechanism shows in the average day:** prices dip at 13:00 local time in both zones. Germany averages about 43 EUR/MWh at 13:00 and 166 at 20:00.
+
+Two things that weren't expected:
+- **SE_4 has the higher wind and solar share** (71% of what it generates, against 47% in Germany). The question above assumed the opposite. Sweden's hydro and nuclear are further north; SE_4 itself generates little, mostly wind, and imports much of its power. So its local share explains less of its price (R² 0.17 against 0.49 for Germany).
+- **SE_4 has the same midday price dip as Germany,** with almost no solar of its own. The dip comes in over the cables, which is where Analysis 2 picks up.
+
+Limits: about ten months of data with no November, the share is of local generation only, and these are relationships in the data, not proof of cause.
+
+**Earlier first look from the Phase 2 sample week (2026-09-10, replaced by the result above):** the result came out the *opposite* way from the hypothesis. The correlation between wind/solar share and price swings was **DE_LU ≈ −0.50, SE_4 ≈ −0.57**: more wind and solar went with *calmer* prices, not wilder ones. (Done in the Phase 2 notebook, `archive/phase_2_quality_and_first_analysis/phase_2_quality_analysis.ipynb`, local only now and still in git history.)
 
 Then ran a regression on the same data, twice:
 - **Normal regression:** everything looked highly significant (p < 0.001).
@@ -86,7 +106,7 @@ After the correction:
 - **Wind/solar share still mattered** (p = 0.014): a real, but weaker, negative relationship.
 - **The country differences did not** (p = 0.449 and p = 0.969): Germany and Sweden don't seem to behave differently.
 
-**Before trusting this:** it's one week of data, so it could just be that week's weather. It's a correlation, not proof that one causes the other. Now that the full pull is done, Phase 4 checks whether it holds.
+**Why it didn't hold:** it was one January week, when almost all of the wind and solar share is wind. The full data shows the negative link belongs to wind, and solar goes the other way.
 
 ---
 
@@ -204,7 +224,7 @@ The fun version should I have way too much time on my hands is to migrate the pr
 ## 10. Rough build order
 
 1. **Phase 1 — manual exploration (complete):** get API access, then check that pulling works for all three data types — prices (DE-LU, SE4, SE1), generation (DE-LU, SE4, reshaped from one column per source into one row per source), and cable flows (DE-LU↔SE4, both directions) — for one sample week, in `archive/phase_1_exploration/01_entsoe_exploration.ipynb` (local only now).
-2. **Phase 2 — quality check + first analysis (complete):** save the sample week as CSVs (`data/processed/`) so we don't hit the API on every run; check data quality (missing timestamps, 15-min instead of hourly, realistic generation numbers); first look at the wind/solar share for both countries before the real regression in Phase 4.
+2. **Phase 2 — quality check + first analysis (complete):** save the sample week as CSVs (`data/processed/`, local archive only now) so we don't hit the API on every run; check data quality (missing timestamps, 15-min instead of hourly, realistic generation numbers); first look at the wind/solar share for both countries before the real regression in Phase 4.
 3. **Phase 3 — proper pipeline into SQLite (complete):** turn the exploration code into fetch → transform → load functions that write into the tables in Section 7. Lives in `src/`.
    - **Done:** `src/pipeline.py` fetches, reshapes and saves prices for all five zones, generation for DE_LU and SE_4, and flows for DE_LU↔SE_4 in both directions. Run it from the repo root with `python -m src.pipeline`. Full pull from 2025-12-02 done and checked: no missing days, no empty values, reruns don't duplicate. Merged to `main` via PR #1.
    - **Decisions (2026-09-24/25):**
@@ -212,7 +232,7 @@ The fun version should I have way too much time on my hands is to migrate the pr
      - **If a fetch fails, the run stops** instead of skipping it quietly.
      - **The API key is loaded from `.env`** with `python-dotenv`, in `src/entsoe_client.py`.
      - **Which zones get pulled for what** is set by three lists in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
-4. **Phase 4 — Analysis 1 (price swings vs. wind/solar share):** the simpler of the two, good to do first. Lives in `analysis/`.
+4. **Phase 4 — Analysis 1 (price swings vs. wind/solar share) (complete):** `analysis/volatility_renewable_share.py`, run from the repo root with `python -m analysis.volatility_renewable_share`. It writes the charts, the regression tables and the CSVs for Tableau to `outputs/`. Results in Section 4.
 5. **Phase 5 — Analysis 2 (the cable and DE–SE prices):** join the flow and price tables already in SQLite. Lives in `analysis/`.
 6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads CSVs exported from SQLite. Plotly stays for the charts inside the analyses.
 7. **Phase 7 (optional extras):** typical price curves (Section 6); scheduled pipeline (Section 9); more countries (Section 8).

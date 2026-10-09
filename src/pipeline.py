@@ -16,8 +16,15 @@ EARLIEST_START = pd.Timestamp("2025-12-02", tz="Europe/Berlin") # First date ENT
 
 
 def init_db(engine):
+    """
+    Create the database file and its tables if they don't exist yet.
+    SQLite is not a server, the whole database is one file (db/energy.db), so there is nothing to set up beforehand.
+    """
+    #Opening the first connection is what creates the file - if energy.db is missing, SQLite makes an empty one.
+    #Careful: this also means a mistyped path gives no error, just a brand-new empty database.
     conn = engine.raw_connection()
     try:
+        #schema.sql uses CREATE TABLE IF NOT EXISTS: builds the tables on a fresh file, does nothing on later runs.
         with open(SCHEMA_PATH, encoding="utf-8") as f:
             conn.executescript(f.read())
     finally:
