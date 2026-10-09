@@ -14,7 +14,10 @@ DEFAULT_DB_PATH = REPO_ROOT / "db" / "energy.db"
 
 
 def get_engine(db_path: Path = DEFAULT_DB_PATH) -> Engine:
-    """SQLAlchemy engine for the SQLite file."""
+    """
+    SQLAlchemy engine for the SQLite file.
+    This only stores the path, nothing touches the disk until the first connection is opened.
+    """
     return create_engine(f"sqlite:///{db_path}")
 
 
