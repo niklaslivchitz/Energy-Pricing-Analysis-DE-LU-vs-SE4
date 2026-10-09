@@ -234,6 +234,8 @@ The fun version should I have way too much time on my hands is to migrate the pr
      - **Which zones get pulled for what** is set by three lists in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
 4. **Phase 4 — Analysis 1 (price swings vs. wind/solar share) (complete):** `analysis/volatility_renewable_share.py`, run from the repo root with `python -m analysis.volatility_renewable_share`. It writes the charts, the regression tables and the CSVs for Tableau to `outputs/`. Results in Section 4.
 5. **Phase 5 — Analysis 2 (the cable and DE–SE prices):** join the flow and price tables already in SQLite. Lives in `analysis/`.
+   - **Before it starts:** save the regression numbers (coefficients, p-values, confidence intervals) as CSV next to the text summaries, in the Analysis 1 script and from the start in the Analysis 2 script. The findings report needs them.
+   - **Right after it:** the findings report script (decided 2026-10-09, in scope). Details in Section 11.
 6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads CSVs exported from SQLite. Plotly stays for the charts inside the analyses.
 7. **Phase 7 — Data management layer (decided 2026-10-09, in scope):** data dictionary, quality checks on every load, lineage, licence and retention notes. Details in Section 11.
 8. **Phase 8 (optional extras):** typical price curves (Section 6); scheduled pipeline (Section 9); more countries (Section 8).
@@ -245,7 +247,23 @@ The fun version should I have way too much time on my hands is to migrate the pr
 
 ## 11. After the two analyses (decided 2026-10-09)
 
-The project as it stands is aimed at a data analyst role. These two additions aim it at other roles as well. Order: cable analysis, Tableau dashboard, data management layer, then the forecasting service.
+The project as it stands is aimed at a data analyst role. The findings report rounds that off, and the two additions after it aim the project at other roles as well. Order: cable analysis, findings report, Tableau dashboard, data management layer, then the forecasting service.
+
+### Findings report (in this repository)
+
+A script that reads the result tables in `outputs/tables/` and writes the findings out as sentences with the current numbers in them. One output file (`outputs/report.md`, or an HTML page with the charts in it), made new on every run.
+
+- **Numbers filled in:** e.g. "10 percentage points more solar goes with 17.9 EUR/MWh more daily volatility in DE_LU."
+- **Simple rules pick the wording:** p below 0.05 gives "a clear effect", otherwise "no detectable effect".
+- **Comparisons:** e.g. whether the solar effect is still there with the month as a control.
+
+Why: the README quotes numbers from one date, and they go out of date as soon as the pipeline runs again. With the report, the README describes the project and links to the report for the current numbers.
+
+What it can't do: it only says what there is a sentence and a rule for. It won't notice anything new. Finding things stays a job for a person looking at the tables.
+
+How it fits with the rest: the analysis scripts compute and save, the report script puts the results into words, and the Tableau dashboard is the interactive version for people who won't open the repository. Plotly is not this step, it only draws charts.
+
+Needs first: the regression numbers as CSV (see Section 10, Phase 5). The text summaries are made for reading, not for a script to pick numbers out of.
 
 ### Data management layer (in this repository)
 
