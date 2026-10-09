@@ -217,7 +217,7 @@ Easy by design: every zone uses the same ENTSO-E data types, so adding e.g. Fran
 
 Show how to run the pipeline automatically every day: with cron (Linux/Mac) or, since this project is built on Windows, Windows Task Scheduler. This is just to mention scheduling in case of portfolio.
 
-The fun version should I have way too much time on my hands is to migrate the project to a cloud based server and schedule it there.
+The fun version should I have way too much time on my hands is to migrate the project to a cloud based server and schedule it there. That idea now lives in Section 11, as part of the forecasting service.
 
 ---
 
@@ -235,6 +235,47 @@ The fun version should I have way too much time on my hands is to migrate the pr
 4. **Phase 4 — Analysis 1 (price swings vs. wind/solar share) (complete):** `analysis/volatility_renewable_share.py`, run from the repo root with `python -m analysis.volatility_renewable_share`. It writes the charts, the regression tables and the CSVs for Tableau to `outputs/`. Results in Section 4.
 5. **Phase 5 — Analysis 2 (the cable and DE–SE prices):** join the flow and price tables already in SQLite. Lives in `analysis/`.
 6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads CSVs exported from SQLite. Plotly stays for the charts inside the analyses.
-7. **Phase 7 (optional extras):** typical price curves (Section 6); scheduled pipeline (Section 9); more countries (Section 8).
+7. **Phase 7 — Data management layer (decided 2026-10-09, in scope):** data dictionary, quality checks on every load, lineage, licence and retention notes. Details in Section 11.
+8. **Phase 8 (optional extras):** typical price curves (Section 6); scheduled pipeline (Section 9); more countries (Section 8).
+9. **Later, as its own repository:** a forecasting service that runs every day (Section 11). Not started until everything above is finished.
 
 **Git workflow (decided 2026-09-04):** Phases 1–2 went straight to `main`, fine for quick exploration work. From Phase 3 on, bigger work goes through its own branch and a pull request.
+
+---
+
+## 11. After the two analyses (decided 2026-10-09)
+
+The project as it stands is aimed at a data analyst role. These two additions aim it at other roles as well. Order: cable analysis, Tableau dashboard, data management layer, then the forecasting service.
+
+### Data management layer (in this repository)
+
+Shows that the data is documented and can be trusted. Mostly documentation plus one checks script.
+
+- **Data dictionary:** every table and column, with its unit, where it comes from and its time zone.
+- **Quality checks after every load:** 96 rows per day, no gaps, no empty values, no values outside a sensible range. Results get stored in their own table, so there's a record of every run.
+- **Lineage:** which script fills which table and writes which output file.
+- **Licence and retention notes:** ENTSO-E data is CC-BY 4.0 (checked 2026-09-11); what is kept, where, and what isn't published.
+
+Write the dictionary and the lineage after the cable analysis, because that analysis may add a capacity table. The quality checks can come earlier.
+
+### Forecasting service (its own repository, later)
+
+Data engineering and data science in one project: a pipeline that runs by itself every day, makes a prediction for tomorrow, and later checks how good that prediction was.
+
+Each daily run:
+1. **Pull** yesterday's actual prices and generation, plus the day-ahead forecasts for wind, solar and demand that ENTSO-E publishes.
+2. **Predict** tomorrow's price swings (or the size of the midday dip) from those forecasts.
+3. **Store** the prediction with the date it was made.
+4. **Score** yesterday's prediction against what really happened, and add it to a running accuracy record.
+
+Why it's worth doing: predictions written down before the outcome is known can't be adjusted afterwards, and a chart of the accuracy over weeks shows that.
+
+What it needs that this project doesn't have yet:
+- **Somewhere to run every day** (a small cloud server with cron, or a scheduled GitHub Actions job).
+- **A hosted database** in place of the SQLite file. SQLAlchemy makes the switch easier; `init_db` is written for SQLite and would need changing.
+- **Logging and tests,** so a failed night run leaves a trace.
+- **A model with a fair test:** train on earlier months, test on later ones, and compare with a simple baseline like "tomorrow is the same as today".
+
+Why its own repository: GitHub doesn't allow forking your own repository into the same account, and this repository should stay a finished analysis with fixed findings. The service starts as a copy of this one.
+
+Known limit: about ten months of data is thin for a forecasting model. Say so in the write-up.
