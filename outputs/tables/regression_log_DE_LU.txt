@@ -3,8 +3,8 @@
 Dep. Variable:     np.log(volatility)   R-squared:                       0.603
 Model:                            OLS   Adj. R-squared:                  0.600
 Method:                 Least Squares   F-statistic:                     111.4
-Date:                Fri, 09 Oct 2026   Prob (F-statistic):           4.37e-37
-Time:                        16:54:12   Log-Likelihood:                -150.75
+Date:                Mon, 12 Oct 2026   Prob (F-statistic):           4.37e-37
+Time:                        12:00:16   Log-Likelihood:                -150.75
 No. Observations:                 309   AIC:                             307.5
 Df Residuals:                     306   BIC:                             318.7
 Df Model:                           2                                         

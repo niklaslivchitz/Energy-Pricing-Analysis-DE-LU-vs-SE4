@@ -144,6 +144,16 @@ def plot_price_by_hour(hourly):
     fig.savefig(FIGURES_DIR / "price_by_hour.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
+def coefficients_table(result):
+    """The regression's coefficients, standard errors, p-values and 95% confidence interval as one table."""
+    table = result.conf_int()
+    table.columns = ["ci_low", "ci_high"]
+    table["coef"] = result.params
+    table["std_err"] = result.bse
+    table["p_value"] = result.pvalues
+    table.index.name = "term"
+    return table.reset_index()
+
 def main():
     """
     This runs the whole analysis, saving the daily and hourly tables, the Spearman correlations and the regression results to text files, and the plots to image files.
@@ -173,11 +183,13 @@ def main():
             print(zone, name)
             print(result.summary())
             (TABLES_DIR / f"regression_{name}_{zone}.txt").write_text(result.summary().as_text())
+            coefficients_table(result).to_csv(TABLES_DIR / f"regression_{name}_{zone}.csv", index=False)
 
     result = fit_model(daily, POOLED_FORMULA)
     print("pooled")
     print(result.summary())
     (TABLES_DIR / "regression_pooled.txt").write_text(result.summary().as_text())
+    coefficients_table(result).to_csv(TABLES_DIR / "regression_pooled.csv", index=False)
 
     plot_daily_volatility(daily)
     plot_volatility_vs_share(daily, "solar_share")
