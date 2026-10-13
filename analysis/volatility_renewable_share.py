@@ -5,8 +5,6 @@ It loads the data from the database, computes the daily volatility and renewable
 Run the script from repo root with `python -m analysis.volatility_renewable_share`.
 """
 
-from unittest import result
-
 import numpy as np  # used inside the log formula
 import pandas as pd
 import statsmodels.formula.api as smf

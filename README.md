@@ -22,13 +22,14 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
 
 - **ETL pipeline:** working. It fetches day-ahead prices (DE-LU, SE1–SE4),
   generation by source (DE-LU, SE4) and cross-border flows (DE-LU ↔ SE4) at
-  15-minute resolution, and upserts them into SQLite. Reruns are idempotent.
+  15-minute resolution, and upserts them into SQLite. It also loads the
+  outage and maintenance records for the cable. Reruns are idempotent.
 - **Data window:** a rolling year up to the latest complete day, but never
   earlier than 2025-12-02, the first date ENTSO-E publishes every series here
-  at 15-minute resolution. The results below use 2025-12-02 to 2026-10-05,
+  at 15-minute resolution. The results below use 2025-12-02 to 2026-10-12,
   about ten months, with no November yet.
 - **Analysis 1 (renewables and volatility):** done, see below.
-- **Analysis 2 (the Baltic Cable and price convergence):** next.
+- **Analysis 2 (the Baltic Cable and price convergence):** done.
 
 ## Findings: renewables and price volatility
 
@@ -37,16 +38,16 @@ within a day. Shares are shares of the zone's own generation, averaged over
 the day.
 
 **Wind and solar have to be looked at separately.** Their combined share is
-almost unrelated to volatility (Spearman +0.25 in DE-LU, −0.05 in SE4),
+almost unrelated to volatility (Spearman +0.24 in DE-LU, −0.05 in SE4),
 because the two pull in opposite directions.
 
 - **Solar goes with larger price swings in Germany.** Spearman correlation
-  +0.74. In a regression with HAC standard errors, 10 percentage points more
+  +0.73. In a regression with HAC standard errors, 10 percentage points more
   solar goes with about 18 EUR/MWh more daily volatility (p < 0.001). The
   effect holds with month controls (about 23 EUR/MWh) and with
   log-transformed volatility, so it is neither a seasonal artefact nor driven
   by a few extreme days.
-- **Wind shows no effect in Germany** once solar is accounted for (p = 0.86).
+- **Wind shows no effect in Germany** once solar is accounted for (p = 0.72).
 - **SE4 is different.** Its solar effect is a third the size of Germany's and
   disappears with month controls. SE4 generates little of its own power and imports much of what
   it uses, so local shares explain less there.
@@ -61,11 +62,32 @@ because the two pull in opposite directions.
 
 ![Average price by hour of day](outputs/figures/price_by_hour.png)
 *The mechanism: prices dip at midday, when solar output peaks. German prices
-average about 43 EUR/MWh at 13:00 against 166 EUR/MWh at 20:00. SE4 shows the
+average about 44 EUR/MWh at 13:00 against 166 EUR/MWh at 20:00. SE4 shows the
 same dip with almost no solar of its own.*
 
 These are associations in ten months of data, not proof of cause. Regression
 tables and the underlying daily table are in `outputs/tables/`.
+
+## Findings: the Baltic Cable and price convergence
+
+Every 15 minutes the cable is either out of service, full, or partly used.
+"Full" is measured against the capacity available at the time, from ENTSO-E's
+outage records.
+
+- **With spare room, the two prices are nearly the same:** a median gap of
+  1.9 EUR/MWh, against 22.7 with the cable full and 15.8 with it out.
+- **A full cable separates the markets about as much as a missing one:**
+  roughly 40 and 36 EUR/MWh more gap per day, with month controls.
+- **Direction matters:** full towards Germany, SE4 is cheaper (median 27
+  EUR/MWh); full towards Sweden, SE4 is more expensive (median 12). The cable fills
+  towards Sweden around midday, when German solar is strongest.
+
+![Daily price gap by cable state](outputs/figures/cable_spread_over_time.png)
+*Grey: cable out of service. Orange: full for most of the day.*
+
+The two zones are also linked through Denmark, Poland and Lithuania, and a
+full cable is partly a result of a price gap, so this shows an association,
+not that this one cable sets the gap.
 
 ## Structure
 
@@ -75,7 +97,7 @@ analysis/            The two core analyses (read from the database, no API calls
 db/                  SQLite schema (the database file itself is not committed)
 docs/                Project brief: rationale, methodology, decisions
 outputs/figures/     Exported charts
-outputs/tables/      Result tables: daily and hourly CSVs, correlations, regression summaries
+outputs/tables/      Result tables, one folder per analysis: daily CSVs, summaries, regression results
 ```
 
 ## Quickstart
@@ -95,9 +117,10 @@ outputs/tables/      Result tables: daily and hourly CSVs, correlations, regress
    ```
    python -m src.pipeline
    ```
-4. Run the analysis from the repo root (writes figures and tables to `outputs/`):
+4. Run the two analyses from the repo root (they write figures and tables to `outputs/`):
    ```
    python -m analysis.volatility_renewable_share
+   python -m analysis.transmission_price_pressure
    ```
 
 ## Tech
