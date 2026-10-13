@@ -9,6 +9,7 @@ import pandas as pd
 
 from src.entsoe_client import get_client, PRICE_ZONES, GENERATION_ZONES, FLOW_PAIRS
 from src.pipeline_utils import fetch_with_retry, upsert_dataframe, get_engine, to_utc_str
+from sqlalchemy import text
 
 
 SCHEMA_PATH = Path(__file__).resolve().parents[1] / "db" / "schema.sql"
@@ -73,6 +74,29 @@ def fetch_and_load_flows(client, engine, zone_from, zone_to, start, end):
     })
     upsert_dataframe(df, "cross_border_flows", ["zone_from", "zone_to", "timestamp"], engine)
 
+def fetch_and_load_outages(client, engine, zone_from, zone_to, start, end):
+    """
+    Fetch outage and maintenance records for a pair of zones and load them into the database.
+    Records get revised and cancelled after the fact, so the pair's rows are replaced on every run.
+    """
+    outages = fetch_with_retry(client.query_unavailability_transmission, zone_from, zone_to, start=start, end=end)
+    df = pd.DataFrame({
+        "zone_from": zone_from,
+        "zone_to": zone_to,
+        "mrid": outages["mrid"].values,
+        "start_time": to_utc_str(outages["start"]),
+        "end_time": to_utc_str(outages["end"]),
+        "available_mw": pd.to_numeric(outages["avail_qty"]).values,
+        "business_type": outages["businesstype"].values,
+        "doc_status": outages["docstatus"].values,
+    })
+    with engine.begin() as conn:
+        conn.execute(
+            text("DELETE FROM transmission_outages WHERE zone_from = :zone_from AND zone_to = :zone_to"),
+            {"zone_from": zone_from, "zone_to": zone_to},
+        )
+    upsert_dataframe(df, "transmission_outages", ["zone_from", "zone_to", "mrid", "start_time", "end_time"], engine)
+
 
 def run_pipeline(start, end):
     engine = get_engine()
@@ -87,6 +111,9 @@ def run_pipeline(start, end):
     for zone_from, zone_to in FLOW_PAIRS:
         print(f"Processing flows for: {zone_from} -> {zone_to}")
         fetch_and_load_flows(client, engine, zone_from, zone_to, start, end)
+    for zone_from, zone_to in FLOW_PAIRS:
+        print(f"Processing outages for: {zone_from} -> {zone_to}")
+        fetch_and_load_outages(client, engine, zone_from, zone_to, start, end)
     print("Pipeline run complete.")
 
 
