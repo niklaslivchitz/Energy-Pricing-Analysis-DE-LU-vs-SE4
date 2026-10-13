@@ -1,0 +1,142 @@
+state
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             abs_spread   R-squared:                       0.167
+Model:                            OLS   Adj. R-squared:                  0.162
+Method:                 Least Squares   F-statistic:                     7.537
+Date:                Tue, 13 Oct 2026   Prob (F-statistic):           0.000636
+Time:                        15:12:23   Log-Likelihood:                -1467.4
+No. Observations:                 316   AIC:                             2941.
+Df Residuals:                     313   BIC:                             2952.
+Df Model:                           2                                         
+Covariance Type:                  HAC                                         
+================================================================================
+                   coef    std err          z      P>|z|      [0.025      0.975]
+--------------------------------------------------------------------------------
+Intercept        2.4975      7.585      0.329      0.742     -12.369      17.364
+share_full      33.7037      9.591      3.514      0.000      14.905      52.502
+share_outage    38.0248     10.561      3.600      0.000      17.326      58.724
+==============================================================================
+Omnibus:                       72.327   Durbin-Watson:                   0.833
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              128.920
+Skew:                           1.260   Prob(JB):                     1.01e-28
+Kurtosis:                       4.855   Cond. No.                         6.82
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 14 lags and without small sample correction
+
+state_month_control
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             abs_spread   R-squared:                       0.365
+Model:                            OLS   Adj. R-squared:                  0.340
+Method:                 Least Squares   F-statistic:                     26.11
+Date:                Tue, 13 Oct 2026   Prob (F-statistic):           4.87e-40
+Time:                        15:12:23   Log-Likelihood:                -1424.5
+No. Observations:                 316   AIC:                             2875.
+Df Residuals:                     303   BIC:                             2924.
+Df Model:                          12                                         
+Covariance Type:                  HAC                                         
+==================================================================================
+                     coef    std err          z      P>|z|      [0.025      0.975]
+----------------------------------------------------------------------------------
+Intercept        -13.1938      3.731     -3.536      0.000     -20.507      -5.881
+C(month)[T.2]      3.4864      1.499      2.326      0.020       0.548       6.425
+C(month)[T.3]      9.1474      1.976      4.629      0.000       5.274      13.020
+C(month)[T.4]     14.3168      2.194      6.524      0.000      10.016      18.618
+C(month)[T.5]     -0.5677      5.304     -0.107      0.915     -10.963       9.827
+C(month)[T.6]      8.7626      2.162      4.053      0.000       4.525      13.000
+C(month)[T.7]     10.1439     13.545      0.749      0.454     -16.404      36.692
+C(month)[T.8]     35.8876     11.463      3.131      0.002      13.420      58.355
+C(month)[T.9]     32.9562      3.351      9.836      0.000      26.389      39.524
+C(month)[T.10]    38.9554      4.857      8.020      0.000      29.435      48.476
+C(month)[T.12]    13.2441      4.792      2.764      0.006       3.852      22.636
+share_full        40.3879      6.285      6.426      0.000      28.069      52.707
+share_outage      36.3174      4.758      7.633      0.000      26.992      45.643
+==============================================================================
+Omnibus:                       90.937   Durbin-Watson:                   1.130
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              247.660
+Skew:                           1.329   Prob(JB):                     1.66e-54
+Kurtosis:                       6.427   Cond. No.                         14.1
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 14 lags and without small sample correction
+
+state_log
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:     np.log(abs_spread)   R-squared:                       0.557
+Model:                            OLS   Adj. R-squared:                  0.539
+Method:                 Least Squares   F-statistic:                     55.99
+Date:                Tue, 13 Oct 2026   Prob (F-statistic):           1.49e-69
+Time:                        15:12:23   Log-Likelihood:                -350.21
+No. Observations:                 316   AIC:                             726.4
+Df Residuals:                     303   BIC:                             775.2
+Df Model:                          12                                         
+Covariance Type:                  HAC                                         
+==================================================================================
+                     coef    std err          z      P>|z|      [0.025      0.975]
+----------------------------------------------------------------------------------
+Intercept          0.2721      0.173      1.576      0.115      -0.066       0.610
+C(month)[T.2]      0.3685      0.131      2.811      0.005       0.112       0.625
+C(month)[T.3]      0.7933      0.095      8.346      0.000       0.607       0.980
+C(month)[T.4]      1.0178      0.105      9.673      0.000       0.812       1.224
+C(month)[T.5]      0.2065      0.220      0.939      0.348      -0.224       0.637
+C(month)[T.6]      0.7209      0.123      5.874      0.000       0.480       0.961
+C(month)[T.7]      0.6940      0.469      1.479      0.139      -0.226       1.614
+C(month)[T.8]      1.4607      0.333      4.392      0.000       0.809       2.113
+C(month)[T.9]      1.7776      0.128     13.896      0.000       1.527       2.028
+C(month)[T.10]     2.2809      0.144     15.846      0.000       1.999       2.563
+C(month)[T.12]     0.6668      0.119      5.615      0.000       0.434       0.900
+share_full         2.6897      0.269     10.010      0.000       2.163       3.216
+share_outage       2.0300      0.232      8.768      0.000       1.576       2.484
+==============================================================================
+Omnibus:                       19.897   Durbin-Watson:                   1.267
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):               41.760
+Skew:                          -0.313   Prob(JB):                     8.55e-10
+Kurtosis:                       4.668   Cond. No.                         14.1
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 14 lags and without small sample correction
+
+direction
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:           price_spread   R-squared:                       0.443
+Model:                            OLS   Adj. R-squared:                  0.419
+Method:                 Least Squares   F-statistic:                     30.20
+Date:                Tue, 13 Oct 2026   Prob (F-statistic):           4.07e-47
+Time:                        15:12:23   Log-Likelihood:                -1433.3
+No. Observations:                 316   AIC:                             2895.
+Df Residuals:                     302   BIC:                             2947.
+Df Model:                          13                                         
+Covariance Type:                  HAC                                         
+====================================================================================
+                       coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------------
+Intercept           16.1076      4.402      3.659      0.000       7.480      24.736
+C(month)[T.2]        0.7899      5.183      0.152      0.879      -9.369      10.949
+C(month)[T.3]      -11.0668      2.973     -3.722      0.000     -16.894      -5.239
+C(month)[T.4]      -11.0575      3.964     -2.790      0.005     -18.826      -3.289
+C(month)[T.5]       -4.8101      5.307     -0.906      0.365     -15.211       5.591
+C(month)[T.6]      -16.5829      4.442     -3.733      0.000     -25.289      -7.876
+C(month)[T.7]      -22.7549     15.247     -1.492      0.136     -52.639       7.129
+C(month)[T.8]      -48.8299     13.511     -3.614      0.000     -75.311     -22.348
+C(month)[T.9]      -35.3073      5.542     -6.370      0.000     -46.170     -24.444
+C(month)[T.10]     -40.0381      5.139     -7.792      0.000     -50.110     -29.967
+C(month)[T.12]     -11.9875      4.961     -2.416      0.016     -21.711      -2.264
+share_full_to_de   -45.3505      7.866     -5.765      0.000     -60.767     -29.934
+share_full_to_se    11.5619      9.517      1.215      0.224      -7.091      30.215
+share_outage       -20.9130      8.187     -2.554      0.011     -36.959      -4.867
+==============================================================================
+Omnibus:                       48.280   Durbin-Watson:                   1.095
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):              103.420
+Skew:                          -0.784   Prob(JB):                     3.49e-23
+Kurtosis:                       5.323   Cond. No.                         14.4
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 14 lags and without small sample correction

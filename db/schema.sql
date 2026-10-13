@@ -30,3 +30,15 @@ CREATE TABLE IF NOT EXISTS cross_border_flows (
     flow_mw REAL,
     PRIMARY KEY (zone_from, zone_to, timestamp)
 );
+
+CREATE TABLE IF NOT EXISTS transmission_outages (
+    zone_from TEXT NOT NULL,
+    zone_to TEXT NOT NULL,
+    mrid TEXT NOT NULL,             -- ENTSO-E's ID for the outage record
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    available_mw REAL,              -- capacity still available during the record
+    business_type TEXT,             -- 'Planned maintenance' or 'Unplanned outage'
+    doc_status TEXT,                -- 'Cancelled' or empty
+    PRIMARY KEY (zone_from, zone_to, mrid, start_time, end_time)
+);

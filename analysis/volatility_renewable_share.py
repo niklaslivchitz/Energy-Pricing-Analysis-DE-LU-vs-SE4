@@ -15,7 +15,7 @@ from src.entsoe_client import GENERATION_ZONES
 from src.pipeline_utils import get_engine, REPO_ROOT
 
 FIGURES_DIR = REPO_ROOT / "outputs" / "figures"
-TABLES_DIR = REPO_ROOT / "outputs" / "tables"
+TABLES_DIR = REPO_ROOT / "outputs" / "tables" / "volatility"
 
 ZONE_FORMULAS = {
     "base": "volatility ~ solar_share + wind_share",
@@ -144,6 +144,16 @@ def plot_price_by_hour(hourly):
     fig.savefig(FIGURES_DIR / "price_by_hour.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
+def coefficients_table(result):
+    """The regression's coefficients, standard errors, p-values and 95% confidence interval as one table."""
+    table = result.conf_int()
+    table.columns = ["ci_low", "ci_high"]
+    table["coef"] = result.params
+    table["std_err"] = result.bse
+    table["p_value"] = result.pvalues
+    table.index.name = "term"
+    return table.reset_index()
+
 def main():
     """
     This runs the whole analysis, saving the daily and hourly tables, the Spearman correlations and the regression results to text files, and the plots to image files.
@@ -166,18 +176,31 @@ def main():
     print(spearman)
     spearman.to_csv(TABLES_DIR / "spearman_by_zone.csv")
 
+    coefficient_tables = []
+    summaries = []
+
     for zone in GENERATION_ZONES:
         zone_daily = daily[daily["zone"] == zone]
         for name, formula in ZONE_FORMULAS.items():
             result = fit_model(zone_daily, formula)
             print(zone, name)
             print(result.summary())
-            (TABLES_DIR / f"regression_{name}_{zone}.txt").write_text(result.summary().as_text())
+            table = coefficients_table(result)
+            table.insert(0, "zone", zone)
+            table.insert(0, "model", name)
+            coefficient_tables.append(table)
+            summaries.append(f"{name} / {zone}\n{result.summary().as_text()}")
 
+    # Fit a pooled model across all zones, with interaction terms for zone.
     result = fit_model(daily, POOLED_FORMULA)
-    print("pooled")
-    print(result.summary())
-    (TABLES_DIR / "regression_pooled.txt").write_text(result.summary().as_text())
+    table = coefficients_table(result)
+    table.insert(0, "zone", "all")
+    table.insert(0, "model", "pooled")
+    coefficient_tables.append(table)
+    summaries.append(f"pooled / all\n{result.summary().as_text()}") #we save the summaries to a text file for easy reading, but the coefficients to a CSV for easier analysis
+
+    pd.concat(coefficient_tables).to_csv(TABLES_DIR / "regression_coefficients.csv", index=False)
+    (TABLES_DIR / "regression_summaries.txt").write_text("\n\n".join(summaries))
 
     plot_daily_volatility(daily)
     plot_volatility_vs_share(daily, "solar_share")

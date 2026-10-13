@@ -1,6 +1,6 @@
 # Project Brief v3
 
-**Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU. It's built so more markets are easy to add without touching the database. SQLite is up and running. Analysis 1 (price swings vs. wind and solar) is done, see Section 4. Analysis 2 (the cable) is next.
+**Status:** Test data pulled and tentatively analyzed, the full project is go to build. The ETL pipeline is done, pulling and storing generation, transmission and pricing data for SE4 and DE-LU. It's built so more markets are easy to add without touching the database. SQLite is up and running. Analysis 1 (price swings vs. wind and solar) is done, see Section 4. Analysis 2 (the cable) is done, see Section 5. Next: the findings report and the Tableau dashboard.
 **Core question:** How does the share of wind and solar power relate to how much prices jump around, in Germany and Sweden? And how does the cable between Germany and Sweden affect whether their prices move together or apart?
 
 ---
@@ -25,7 +25,8 @@ Only source that gives both countries' prices and generation in the same format,
 | Day-ahead prices | Price in EUR/MWh every 15 min, per zone | `query_day_ahead_prices()` |
 | Actual generation per type | MW produced every 15 min by each source (wind, solar, hydro, nuclear, etc.) per zone | `query_generation(..., nett=True)` |
 | Cross-border flows | MW flowing between two zones every 15 min, one direction per call | `query_crossborder_flows()` |
-| (Optional, not pulled yet) Cable capacity / planned exchange | How much the cable is allowed to carry, and the planned trade | `query_net_transfer_capacity_weekahead()`, `query_scheduled_exchanges()` |
+| Cable outages and maintenance (added 2026-10-13) | One record per outage: start, end, and how many MW the cable could still carry | `query_unavailability_transmission()` |
+| (Optional, not pulled) Planned exchange | The planned trade over the cable | `query_scheduled_exchanges()` |
 
 **15-minute data (checked 2026-09-25):** the data comes in 15-minute steps, not hourly like this brief first assumed. Each data type switched from hourly to 15-min on a different date:
 
@@ -120,7 +121,7 @@ The logic: when a cable connects two markets, power flows from the cheap side to
 1. Load DE-LU and **SE4** prices from the database.
 2. Load the cable flows (DE↔SE4) for the same period.
 3. Compute `price_spread = price_SE4 − price_DE-LU` every 15 min.
-4. Compute `flow_utilization = |flow| / capacity` every 15 min, i.e. how full the cable is. Which capacity to use is still open, see below.
+4. Compute `flow_utilization = |flow| / capacity` every 15 min, i.e. how full the cable is. The capacity comes from the outage records, see the result below.
 5. Compare the price gap when the cable is (nearly) full vs. when it isn't. A box plot shows the main story before any statistics.
 6. Optional: a regression of `|price_spread|` on `flow_utilization`.
 7. Optional: which way does power mostly flow, and does it change with the seasons (e.g. with German wind)? Shows *when* each country needs the other.
@@ -149,6 +150,44 @@ The logic: when a cable connects two markets, power flows from the cheap side to
   - Split into "full" / "not full" (e.g. `flow_utilization > 0.9`) and compare the price gap with a Mann-Whitney U test (`scipy.stats.mannwhitneyu`). Power prices have extreme spikes, so a t-test isn't a good fit.
   - Also run the regression from step 6, `spread ~ flow_utilization`, for a slope and p-value.
   - Same catch as Analysis 1: each 15-min value is very similar to the one before, so normal p-values look much better than they really are. Use the corrected version (`cov_type='HAC'`, `maxlags` ~96 = 24 hours) before trusting a p-value.
+
+**Result (2026-10-13, data from 2025-12-02 to 2026-10-12):** done in `analysis/transmission_price_pressure.py`. Tables are in `outputs/tables/cable/`, charts in `outputs/figures/` (names start with `cable_`).
+
+What changed from the steps above:
+- **Three states instead of "full / not full".** Every 15 minutes the cable is out of service (39% of the time), full (39%) or partly used (23%).
+- **"Full" is measured against the capacity that was available at the time,** taken from the outage records, not against 600 MW. Flows of 400 MW and more also count as full.
+- **The test runs on daily values,** like in Analysis 1: the average price gap of the day against the share of the day the cable was full or out. HAC standard errors with 14 daily lags, because outages last for weeks.
+
+What came out:
+- **With spare room on the cable, the two prices are almost the same.** The typical (median) gap is 1.9 EUR/MWh. With the cable full it is 22.7, with the cable out 15.8.
+- **A day with the cable full all day has a gap about 40 EUR/MWh bigger** than a day with spare room all day (month as a control, p < 0.001, between 28 and 53).
+- **A day with the cable out has a gap about 36 EUR/MWh bigger** (between 27 and 46). So a full cable separates the two markets about as much as a missing one.
+- **Still there with the logarithm of the gap,** so it isn't a few extreme days.
+- **Direction, full towards Germany:** Sweden is cheaper, typically by 27 EUR/MWh. Clear in the daily test as well (about 45 EUR/MWh, p < 0.001). This is the common direction, 3.5 times as often as the other.
+- **Direction, full towards Sweden:** Sweden is more expensive, typically by 12 EUR/MWh. The daily test has the right sign but can't tell it from zero (p = 0.22). It happens mostly between 11:00 and 14:00, so it lasts a few hours and disappears in a daily average.
+- **The link to Analysis 1:** the cable fills towards Sweden around midday, when German solar pushes the German price down, and towards Germany in the evening and at night.
+- **With the cable out, Sweden is the cheaper side** (about 21 EUR/MWh on average). It's the zone that would have been exporting.
+
+Limits:
+- **About ten months, two long outages.** There are 119 outage days, but they come from very few separate events. July and August are outage only, so for those months the outage and the season can't be told apart.
+- **Some limits are not in the outage records.** On 5 October the flow sat at about 300 MW with a gap of over 100 EUR/MWh, and that counts as "partly used". This makes the difference between the groups look smaller, not bigger.
+- **The cable state explains part of the gap, not all of it** (R² 0.17 without and 0.37 with the month). The rest is how different the two markets are on a given day.
+- See the note on the other connections below for how to word the result.
+
+**Notes on method and wording (2026-10-13):**
+
+- **The capacity question is answered: use the outage records.** ENTSO-E publishes outages and maintenance for the cable (`query_unavailability_transmission()` in `entsoe-py`), each with a start, an end and the capacity that was still available. Turned into one value per 15 minutes, that gives the capacity to divide the flow by. This replaces options (a) to (c) above.
+- **The cable was never at its full 600 MW in our data.**
+  - 4 Nov 2025 to 19 Apr 2026: a fault limited it to about 204 MW towards Sweden and 216 MW towards Germany. So the ~217 MW plateau was a full cable.
+  - 20 Apr to about 22 May 2026, and 22 Jun to 14 Sep 2026: completely out of service.
+  - After 14 Sep 2026: about 420 to 430 MW. The outage records mostly don't show this limit, so flows of 400 MW and more are counted as full as well (the highest flow in the data is 433 MW).
+- **Three states instead of two:** out of service (40% of the time), full (39%), partly used (21%).
+- **The other connections matter for how to word the result.** SE4 is also connected to eastern Denmark, Poland and Lithuania, and Germany to both Danish zones. So the two markets are not cut off from each other when the Baltic Cable is down.
+  - What the data shows: when this cable is full or out, the price gap is large. With spare room, the gap almost disappears.
+  - What it doesn't show: that this one cable is what keeps the prices together. A full cable is partly a *result* of a price gap, not only a cause: power is sent from the cheap side to the expensive side until the prices meet or the cable is full.
+  - More likely: when the gap is big enough to fill the Baltic Cable, the other routes are full in the same direction too. The whole border region is congested, and this cable is the one we measure.
+  - The outage comparison is the stronger evidence, because unplanned outages don't happen because of prices. Still, nobody knows what the gap would have been on those days with the cable working.
+- **Open question for later:** add the SE4 connections to Denmark, Poland and Lithuania (`FLOW_PAIRS`) and the eastern Danish price zone, and check whether those are also at their limits when the gap is large. Not part of this analysis.
 
 ---
 
@@ -192,7 +231,21 @@ CREATE TABLE IF NOT EXISTS cross_border_flows (
     flow_mw REAL,
     PRIMARY KEY (zone_from, zone_to, timestamp)
 );
+
+CREATE TABLE IF NOT EXISTS transmission_outages (
+    zone_from TEXT NOT NULL,
+    zone_to TEXT NOT NULL,
+    mrid TEXT NOT NULL,             -- ENTSO-E's ID for the outage record
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    available_mw REAL,              -- capacity still available during the record
+    business_type TEXT,             -- 'Planned maintenance' or 'Unplanned outage'
+    doc_status TEXT,                -- 'Cancelled' or empty
+    PRIMARY KEY (zone_from, zone_to, mrid, start_time, end_time)
+);
 ```
+
+**The fourth table (added 2026-10-13):** `transmission_outages` is different from the other three. Its rows are periods, not one value per 15 minutes, and ENTSO-E changes and cancels records after the fact. So the pipeline doesn't update row by row here: on every run it deletes the rows for a pair of zones and loads the current set (about 130 records per direction). The analysis turns the periods into one capacity value per 15 minutes.
 
 **Design decisions (2026-09-24):**
 - **Rerunning the pipeline is safe.** Each table has a primary key made of several columns (e.g. zone + timestamp). When a row with the same key already exists, the pipeline updates it instead of adding a copy (`INSERT ... ON CONFLICT DO UPDATE`, an "upsert"). Checked: two runs over the same week give the same row counts.
@@ -200,7 +253,7 @@ CREATE TABLE IF NOT EXISTS cross_border_flows (
 - **Key columns can't be empty (`NOT NULL`).** SQLite would otherwise allow an empty zone or timestamp, and those don't count as duplicates of each other, so the same row would get added again on every run. Value columns can be empty, so missing data stays visible as missing.
 - **Production types keep ENTSO-E's names** (e.g. `Wind Onshore`) instead of being renamed. Analysis 1 only needs a list of which names count as wind/solar, and that list can live in the analysis code.
 
-pandas reads from these tables with `pd.read_sql(query, engine)`, using the shared database connection from `get_engine()` in `src/pipeline_utils.py`. Adding a country later just means more rows in the same three tables, no new tables needed.
+pandas reads from these tables with `pd.read_sql(query, engine)`, using the shared database connection from `get_engine()` in `src/pipeline_utils.py`. Adding a country later just means more rows in the same tables, no new tables needed.
 
 ---
 
@@ -233,8 +286,8 @@ The fun version should I have way too much time on my hands is to migrate the pr
      - **The API key is loaded from `.env`** with `python-dotenv`, in `src/entsoe_client.py`.
      - **Which zones get pulled for what** is set by three lists in `src/entsoe_client.py`: `PRICE_ZONES` (all five), `GENERATION_ZONES` (DE_LU, SE_4) and `FLOW_PAIRS` (DE_LU↔SE_4).
 4. **Phase 4 — Analysis 1 (price swings vs. wind/solar share) (complete):** `analysis/volatility_renewable_share.py`, run from the repo root with `python -m analysis.volatility_renewable_share`. It writes the charts, the regression tables and the CSVs for Tableau to `outputs/`. Results in Section 4.
-5. **Phase 5 — Analysis 2 (the cable and DE–SE prices):** join the flow and price tables already in SQLite. Lives in `analysis/`.
-   - **Before it starts:** save the regression numbers (coefficients, p-values, confidence intervals) as CSV next to the text summaries, in the Analysis 1 script and from the start in the Analysis 2 script. The findings report needs them.
+5. **Phase 5 — Analysis 2 (the cable and DE–SE prices) (complete):** `analysis/transmission_price_pressure.py`, run from the repo root with `python -m analysis.transmission_price_pressure`. Joins prices, flows and the outage records. The pipeline got a fourth table for the outage records along the way (Section 7). Results in Section 5.
+   - **Done along the way:** both scripts save the regression numbers (coefficients, p-values, confidence intervals) as one CSV per analysis, `regression_coefficients.csv`, next to the text summaries. The findings report needs them. Each analysis has its own folder under `outputs/tables/`.
    - **Right after it:** the findings report script (decided 2026-10-09, in scope). Details in Section 11.
 6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads CSVs exported from SQLite. Plotly stays for the charts inside the analyses.
 7. **Phase 7 — Data management layer (decided 2026-10-09, in scope):** data dictionary, quality checks on every load, lineage, licence and retention notes. Details in Section 11.
