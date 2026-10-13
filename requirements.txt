@@ -1,7 +1,8 @@
 entsoe-py
 pandas
+numpy
 statsmodels
 seaborn
-plotly
+matplotlib
 python-dotenv
 sqlalchemy

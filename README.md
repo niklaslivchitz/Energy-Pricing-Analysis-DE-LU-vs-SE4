@@ -125,7 +125,7 @@ outputs/tables/      Result tables, one folder per analysis: daily CSVs, summari
 
 ## Tech
 
-Python · entsoe-py · pandas · SQLite + SQLAlchemy · statsmodels · seaborn/matplotlib · plotly
+Python · entsoe-py · pandas · SQLite + SQLAlchemy · statsmodels · seaborn/matplotlib
 
 ## Data
 
