@@ -42,6 +42,11 @@ Volatility here is the standard deviation of the 96 quarter-hourly prices
 within a day. Shares are shares of the zone's own generation, averaged over
 the day.
 
+**The conclusions here in the readme might be dated by new data pulls so check the report.md**
+What is here is based off of a one time run. The report.md will be generated when its corresponding
+script is run. The same goes for the pictures, they might contradict the numbers shown in the text
+here in case the market drastically changes.
+
 **Wind and solar have to be looked at separately.** Their combined share is
 almost unrelated to volatility (Spearman +0.24 in DE-LU, −0.05 in SE4),
 because the two pull in opposite directions.
