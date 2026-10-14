@@ -117,8 +117,13 @@ def run_pipeline(start, end):
     print("Pipeline run complete.")
 
 
-if __name__ == "__main__":
+def main():
+    """Run the pipeline for the standard window: the last year up to midnight today, but not before EARLIEST_START."""
     end = pd.Timestamp.now(tz="Europe/Berlin").normalize() #We pull data up to midnight today in Berlin time.
     start = max(end - pd.Timedelta(days=365), EARLIEST_START)  # Fetch data for the last year, but not before the earliest start date.
     print(f"Pulling {start} to {end}")
     run_pipeline(start, end)
+
+
+if __name__ == "__main__":
+    main()

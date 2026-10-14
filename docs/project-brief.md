@@ -289,7 +289,7 @@ The fun version should I have way too much time on my hands is to migrate the pr
 5. **Phase 5 — Analysis 2 (the cable and DE–SE prices) (complete):** `analysis/transmission_price_pressure.py`, run from the repo root with `python -m analysis.transmission_price_pressure`. Joins prices, flows and the outage records. The pipeline got a fourth table for the outage records along the way (Section 7). Results in Section 5.
    - **Done along the way:** both scripts save the regression numbers (coefficients, p-values, confidence intervals) as one CSV per analysis, `regression_coefficients.csv`, next to the text summaries. The findings report needs them. Each analysis has its own folder under `outputs/tables/`.
    - **Right after it:** the findings report script (decided 2026-10-09, in scope). Details in Section 11.
-6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads CSVs exported from SQLite. Plotly stays for the charts inside the analyses.
+6. **Phase 6 — Tableau dashboard + polish:** a Tableau Public dashboard is the main deliverable (required, not optional). It reads the CSVs the analysis scripts write to `outputs/tables/`. The charts inside the analyses are made with seaborn and matplotlib; Plotly was planned for them at first and isn't used.
 7. **Phase 7 — Data management layer (decided 2026-10-09, in scope):** data dictionary, quality checks on every load, lineage, licence and retention notes. Details in Section 11.
 8. **Phase 8 (optional extras):** typical price curves (Section 6); scheduled pipeline (Section 9); more countries (Section 8).
 9. **Later, as its own repository:** a forecasting service that runs every day (Section 11). Not started until everything above is finished.
@@ -326,6 +326,10 @@ Shows that the data is documented and can be trusted. Mostly documentation plus 
 - **Quality checks after every load:** 96 rows per day, no gaps, no empty values, no values outside a sensible range. Results get stored in their own table, so there's a record of every run.
 - **Lineage:** which script fills which table and writes which output file.
 - **Licence and retention notes:** ENTSO-E data is CC-BY 4.0 (checked 2026-09-11); what is kept, where, and what isn't published.
+- **What scales to other zones and what doesn't (reviewed 2026-10-14):** write this up for readers who want to reuse the code.
+  - **Scales as it is:** the database (every table has zone columns), the pipeline (loops over the lists in `src/entsoe_client.py`), the volatility analysis (follows `GENERATION_ZONES`, skips fuel types a zone doesn't report, stops with an error if a zone has no matching prices), and the volatility part of the findings report.
+  - **Needs a check when adding zones:** `EARLIEST_START` in `src/pipeline.py` is the date SE4 generation switched to 15 minutes; other zones may have switched on other dates or not at all. A flow pair with no outage records in the window would stop the pipeline run, because a failed fetch stops the run.
+  - **Doesn't scale, on purpose:** the cable analysis and the cable part of the findings report. They are about the Baltic Cable only, with their own zone constants, capacities, column names and labels. Making them work for any list of cables would only pay off together with the open question in Section 5 (the SE4 links to Denmark, Poland and Lithuania).
 
 Write the dictionary and the lineage after the cable analysis, because that analysis may add a capacity table. The quality checks can come earlier.
 

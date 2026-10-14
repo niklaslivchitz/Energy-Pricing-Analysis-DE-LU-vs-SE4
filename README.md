@@ -17,6 +17,8 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
    Answered below: it depends on which of the two, solar yes, wind no.
 2. **Transmission price pressure:** do German (DE-LU) and southern Swedish (SE4)
    prices decouple when the Baltic Cable between them is congested? The hypothesis here is that the prices stay very close as long as the cable has spare capacity, and drift apart when it's full.
+   Answered below: yes. With spare room the prices are nearly equal; with the cable
+   full or out of service they drift apart by tens of euros.
 
 ## Status
 
@@ -29,7 +31,10 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
   at 15-minute resolution. The results below use 2025-12-02 to 2026-10-12,
   about ten months, with no November yet.
 - **Analysis 1 (renewables and volatility):** done, see below.
-- **Analysis 2 (the Baltic Cable and price convergence):** done.
+- **Analysis 2 (the Baltic Cable and price convergence):** done, see below.
+- **Findings report:** done. A script turns the latest results into plain
+  sentences, see [`outputs/report.md`](outputs/report.md).
+- **Next:** a Tableau Public dashboard built on the result tables.
 
 ## Findings: renewables and price volatility
 
@@ -89,15 +94,23 @@ The two zones are also linked through Denmark, Poland and Lithuania, and a
 full cable is partly a result of a price gap, so this shows an association,
 not that this one cable sets the gap.
 
+## Current numbers
+
+The findings above use data up to 12 October 2026 and stay as written. For
+the current numbers, with an explanation of each test in plain words, see
+[`outputs/report.md`](outputs/report.md). It is regenerated on every run.
+
 ## Structure
 
 ```
+run_all.py           Runs everything in order: pipeline, both analyses, findings report
 src/                 ETL pipeline: ENTSO-E client, fetch → transform → load, shared helpers
-analysis/            The two core analyses (read from the database, no API calls)
+analysis/            The two analyses and the findings report (read from the database and outputs, no API calls)
 db/                  SQLite schema (the database file itself is not committed)
 docs/                Project brief: rationale, methodology, decisions
 outputs/figures/     Exported charts
 outputs/tables/      Result tables, one folder per analysis: daily CSVs, summaries, regression results
+outputs/report.md    Findings report, regenerated on every run
 ```
 
 ## Quickstart
@@ -108,27 +121,29 @@ outputs/tables/      Result tables, one folder per analysis: daily CSVs, summari
    ```
    ENTSOE_API_KEY=your-token-here
    ```
-2. Create a virtual environment and install dependencies:
+2. Create a virtual environment, activate it, and install the dependencies:
    ```
    python -m venv .venv
+   source .venv/Scripts/activate
    pip install -r requirements.txt
    ```
-3. Run the pipeline from the repo root (creates `db/energy.db`):
+   The activate line is for Git Bash on Windows; on Mac or Linux it is
+   `source .venv/bin/activate`. Activate it again in every new terminal.
+3. Run everything from the repo root:
    ```
-   python -m src.pipeline
+   python run_all.py
    ```
-4. Run the two analyses from the repo root (they write figures and tables to `outputs/`):
-   ```
-   python -m analysis.volatility_renewable_share
-   python -m analysis.transmission_price_pressure
-   ```
+   This runs the pipeline (creates or updates `db/energy.db`), both analyses
+   and the findings report. Each part can also be run on its own, e.g.
+   `python -m src.pipeline` or `python -m analysis.transmission_price_pressure`.
+
 
 ## Tech
 
-Python · entsoe-py · pandas · SQLite + SQLAlchemy · statsmodels · seaborn/matplotlib · plotly
+Python · entsoe-py · pandas · SQLite + SQLAlchemy · statsmodels · seaborn/matplotlib
 
 ## Data
 
 Data from the [ENTSO-E Transparency Platform](https://transparency.entsoe.eu),
-licensed CC-BY 4.0. The data isn't committed to this repo. Run the pipeline
-with your own API key to reproduce it.
+licensed CC-BY 4.0. The raw data isn't committed to this repo. Run
+`run_all.py` with your own API key to reproduce it.

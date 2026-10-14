@@ -17,6 +17,10 @@ from src.pipeline_utils import get_engine, REPO_ROOT
 FIGURES_DIR = REPO_ROOT / "outputs" / "figures"
 TABLES_DIR = REPO_ROOT / "outputs" / "tables" / "volatility"
 
+# ENTSO-E production type names that count as wind and as solar. Types a zone doesn't report are skipped.
+WIND_TYPES = ["Wind Onshore", "Wind Offshore"]
+SOLAR_TYPES = ["Solar"]
+
 ZONE_FORMULAS = {
     "base": "volatility ~ solar_share + wind_share",
     "month_control": "volatility ~ solar_share + wind_share + C(month)",
@@ -44,8 +48,10 @@ def compute_shares(generation):
     production_cols = wide.columns.tolist()
     wide = wide.reset_index()
     total = wide[production_cols].sum(axis=1)
-    wide["wind_share"] = wide[["Wind Onshore", "Wind Offshore"]].sum(axis=1) / total
-    wide["solar_share"] = wide["Solar"] / total
+    wind_cols = [c for c in WIND_TYPES if c in wide.columns]
+    solar_cols = [c for c in SOLAR_TYPES if c in wide.columns]
+    wide["wind_share"] = wide[wind_cols].sum(axis=1) / total
+    wide["solar_share"] = wide[solar_cols].sum(axis=1) / total
     wide["renewables_share"] = wide["wind_share"] + wide["solar_share"]
     return wide[["zone", "timestamp", "wind_share", "solar_share", "renewables_share"]]
 
@@ -164,6 +170,10 @@ def main():
 
     shares = compute_shares(generation)
     daily = build_daily_table(prices, shares)
+    missing = set(GENERATION_ZONES) - set(daily["zone"])
+    if missing:
+        # the merge in build_daily_table keeps only zones with both prices and generation
+        raise ValueError(f"No matching prices and generation for {sorted(missing)}. Check PRICE_ZONES and GENERATION_ZONES in src/entsoe_client.py.")
     hourly = build_hourly_table(prices)
     print(daily.head())
     print(hourly.head())
