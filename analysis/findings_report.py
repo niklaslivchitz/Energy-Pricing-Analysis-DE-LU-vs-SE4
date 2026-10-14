@@ -47,6 +47,16 @@ def image_lines(filename, caption):
     return [f"![{caption}](figures/{filename})", f"*{caption}*", ""]
 
 
+def date_range_text(daily):
+    """
+    'Data from ... to ...' in local (Berlin) days. The daily tables use UTC days, and the data starts
+    at local midnight, which is still the evening before in UTC. So the first UTC date only holds
+    that last hour or two and is skipped.
+    """
+    dates = sorted(daily["date"].unique())
+    return f"Data from {dates[1]} to {dates[-1]}."
+
+
 def get_term(coefficients, model, zone, term):
     """Getting data out of the coefficient table. One row of a coefficient table, picked by model, zone and term."""
     match = coefficients[
@@ -139,7 +149,7 @@ def volatility_section():
     lines = [
         "## Wind, solar and price volatility",
         "",
-        f"Data from {daily['date'].min()} to {daily['date'].max()}. Volatility is the standard deviation "
+        f"{date_range_text(daily)} Volatility is the standard deviation "
         "of the 15-minute prices within a day. Shares are shares of the zone's own generation.",
         "",
     ]
@@ -245,7 +255,7 @@ def cable_section():
     lines = [
         "## The Baltic Cable and the price gap",
         "",
-        f"Data from {daily['date'].min()} to {daily['date'].max()}. Every 15 minutes the cable is out of service, "
+        f"{date_range_text(daily)} Every 15 minutes the cable is out of service, "
         "full, or partly used. The price gap is the difference between the Swedish (SE_4) and German (DE_LU) price.",
         "",
     ]
