@@ -219,6 +219,28 @@ def cable_state_finding(coefficients, state_summary, zone, term, state, state_wo
     ]
 
 
+def flow_lines(flow_by_direction):
+    """The text lines on which way power flowed, and how much energy went each way."""
+    to_de = flow_by_direction.loc["towards Germany"]
+    to_se = flow_by_direction.loc["towards Sweden"]
+    none = flow_by_direction.loc["none"]
+    return [
+        "### Which way does power flow?",
+        "",
+        f"- **Towards Germany:** {to_de['share_of_time']:.0%} of the time ({to_de['share_of_in_service_time']:.0%} of the time "
+        f"the cable was in service), {to_de['energy_mwh'] / 1000:,.0f} GWh in total.",
+        f"- **Towards Sweden:** {to_se['share_of_time']:.0%} of the time ({to_se['share_of_in_service_time']:.0%} of the time "
+        f"in service), {to_se['energy_mwh'] / 1000:,.0f} GWh in total.",
+        f"- **No flow:** {none['share_of_time']:.0%} of the time, mostly because the cable was out of service. "
+        f"While in service it stood idle {none['share_of_in_service_time']:.0%} of the time.",
+        "",
+        "Power flows from the cheaper zone to the more expensive one, so this also says which side was usually cheaper: "
+        "when power goes towards Germany, Swedish power is pushing into the German market. "
+        "*Method: share of 15-minute intervals by flow direction; energy is the flow in MW times a quarter of an hour, added up.*",
+        "",
+    ]
+
+
 def cable_direction_lines(coefficients, direction_summary, full_by_hour, zone):
     """The text lines on which way the cable is full, and what that does to the price gap."""
     terms = {"towards Germany": "share_full_to_de", "towards Sweden": "share_full_to_se"}
@@ -249,6 +271,7 @@ def cable_section():
     state_summary = pd.read_csv(CABLE_DIR / "abs_spread_by_state.csv", index_col=0)
     direction_summary = pd.read_csv(CABLE_DIR / "spread_by_direction_when_full.csv", index_col=0)
     full_by_hour = pd.read_csv(CABLE_DIR / "full_intervals_by_hour.csv", index_col=0)
+    flow_by_direction = pd.read_csv(CABLE_DIR / "flow_by_direction.csv", index_col=0)
     daily = pd.read_csv(CABLE_DIR / "daily_spread_and_cable_state.csv")
     zone = coefficients["zone"].iloc[0]
 
@@ -263,6 +286,7 @@ def cable_section():
         "cable_spread_over_time.png",
         "The daily price gap. Grey: cable out of service. Orange: cable full for most of the day. White: spare room for most of the day.",
     )
+    lines += flow_lines(flow_by_direction)
     lines += cable_state_finding(coefficients, state_summary, zone, "share_full", "full", "full")
     lines += cable_state_finding(coefficients, state_summary, zone, "share_outage", "outage", "out of service")
     lines += image_lines(

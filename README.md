@@ -26,6 +26,9 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
   generation by source (DE-LU, SE4) and cross-border flows (DE-LU ↔ SE4) at
   15-minute resolution, and upserts them into SQLite. It also loads the
   outage and maintenance records for the cable. Reruns are idempotent.
+- **Database:** about 850,000 rows in four tables as of mid-October 2026:
+  about 150,000 prices (5 zones), 640,000 generation values (16 production
+  types), 60,000 cable flows and 265 outage records. About 98 MB in SQLite.
 - **Data window:** a rolling year up to the latest complete day, but never
   earlier than 2025-12-02, the first date ENTSO-E publishes every series here
   at 15-minute resolution. The results below use 2025-12-02 to 2026-10-12,
@@ -84,6 +87,11 @@ Every 15 minutes the cable is either out of service, full, or partly used.
 "Full" is measured against the capacity available at the time, from ENTSO-E's
 outage records.
 
+- **Power mostly flows towards Germany:** 63% of the time the cable was in
+  service, against 23% towards Sweden (idle the rest). That is about 700 GWh
+  towards Germany against 235 GWh towards Sweden over the period. Power flows
+  from the cheaper zone, so Sweden was usually the cheaper side, and Swedish
+  power was pushing into the German market far more often than the reverse.
 - **With spare room, the two prices are nearly the same:** a median gap of
   1.9 EUR/MWh, against 22.7 with the cable full and 15.8 with it out.
 - **A full cable separates the markets about as much as a missing one:**

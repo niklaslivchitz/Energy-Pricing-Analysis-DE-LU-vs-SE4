@@ -71,6 +71,14 @@ Data from 2025-12-02 to 2026-10-13. Every 15 minutes the cable is out of service
 ![The daily price gap. Grey: cable out of service. Orange: cable full for most of the day. White: spare room for most of the day.](figures/cable_spread_over_time.png)
 *The daily price gap. Grey: cable out of service. Orange: cable full for most of the day. White: spare room for most of the day.*
 
+### Which way does power flow?
+
+- **Towards Germany:** 39% of the time (63% of the time the cable was in service), 707 GWh in total.
+- **Towards Sweden:** 14% of the time (23% of the time in service), 235 GWh in total.
+- **No flow:** 47% of the time, mostly because the cable was out of service. While in service it stood idle 14% of the time.
+
+Power flows from the cheaper zone to the more expensive one, so this also says which side was usually cheaper: when power goes towards Germany, Swedish power is pushing into the German market. *Method: share of 15-minute intervals by flow direction; energy is the flow in MW times a quarter of an hour, added up.*
+
 ### Cable full
 
 - **First look:** the typical price gap is 22.5 EUR/MWh with the cable full, against 2.0 with spare room. The cable is in this state 39% of the time. *Method: median price gap over all 15-minute intervals in each cable state.*

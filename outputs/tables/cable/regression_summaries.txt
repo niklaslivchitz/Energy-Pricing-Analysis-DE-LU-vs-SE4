@@ -5,7 +5,7 @@ Dep. Variable:             abs_spread   R-squared:                       0.168
 Model:                            OLS   Adj. R-squared:                  0.163
 Method:                 Least Squares   F-statistic:                     7.620
 Date:                Wed, 14 Oct 2026   Prob (F-statistic):           0.000587
-Time:                        14:31:03   Log-Likelihood:                -1471.6
+Time:                        14:54:25   Log-Likelihood:                -1471.6
 No. Observations:                 317   AIC:                             2949.
 Df Residuals:                     314   BIC:                             2960.
 Df Model:                           2                                         
@@ -33,7 +33,7 @@ Dep. Variable:             abs_spread   R-squared:                       0.362
 Model:                            OLS   Adj. R-squared:                  0.337
 Method:                 Least Squares   F-statistic:                     25.68
 Date:                Wed, 14 Oct 2026   Prob (F-statistic):           1.56e-39
-Time:                        14:31:03   Log-Likelihood:                -1429.5
+Time:                        14:54:25   Log-Likelihood:                -1429.5
 No. Observations:                 317   AIC:                             2885.
 Df Residuals:                     304   BIC:                             2934.
 Df Model:                          12                                         
@@ -71,7 +71,7 @@ Dep. Variable:     np.log(abs_spread)   R-squared:                       0.553
 Model:                            OLS   Adj. R-squared:                  0.535
 Method:                 Least Squares   F-statistic:                     53.15
 Date:                Wed, 14 Oct 2026   Prob (F-statistic):           2.46e-67
-Time:                        14:31:03   Log-Likelihood:                -352.18
+Time:                        14:54:25   Log-Likelihood:                -352.18
 No. Observations:                 317   AIC:                             730.4
 Df Residuals:                     304   BIC:                             779.2
 Df Model:                          12                                         
@@ -109,7 +109,7 @@ Dep. Variable:           price_spread   R-squared:                       0.443
 Model:                            OLS   Adj. R-squared:                  0.419
 Method:                 Least Squares   F-statistic:                     29.85
 Date:                Wed, 14 Oct 2026   Prob (F-statistic):           9.30e-47
-Time:                        14:31:03   Log-Likelihood:                -1437.4
+Time:                        14:54:25   Log-Likelihood:                -1437.4
 No. Observations:                 317   AIC:                             2903.
 Df Residuals:                     303   BIC:                             2955.
 Df Model:                          13                                         

@@ -89,6 +89,7 @@ def build_cable_table(prices, flows, outages_to_de, outages_to_se):
     cable["price_spread"] = cable["price_se4"] - cable["price_de"]
     cable["abs_spread"] = cable["price_spread"].abs()
     cable["net_flow"] = cable["flow_se_to_de"] - cable["flow_de_to_se"]
+    cable["energy_mwh"] = cable["net_flow"].abs() * 0.25  # MW held for 15 minutes = MW x 0.25 h
 
     timestamps = pd.DatetimeIndex(cable["timestamp"])
     cable["capacity_to_de"] = capacity_series(outages_to_de, timestamps, RATED_MW_TO_DE).values
@@ -232,6 +233,17 @@ def main():
     full_by_hour = full.groupby(["hour", "direction"]).size().unstack()
     print(full_by_hour)
     full_by_hour.to_csv(TABLES_DIR / "full_intervals_by_hour.csv")
+
+    # Which way power flowed, as a share of all time and of the time the cable was in service
+    flow_by_direction = cable.groupby("direction").agg(
+        intervals=("net_flow", "size"),
+        energy_mwh=("energy_mwh", "sum"),
+    )
+    flow_by_direction["share_of_time"] = flow_by_direction["intervals"] / len(cable)
+    in_service = cable[cable["state"] != "outage"]
+    flow_by_direction["share_of_in_service_time"] = in_service.groupby("direction").size() / len(in_service)
+    print(flow_by_direction)
+    flow_by_direction.to_csv(TABLES_DIR / "flow_by_direction.csv")
 
     coefficient_tables = []
     summaries = []
