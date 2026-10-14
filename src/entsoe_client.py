@@ -17,7 +17,9 @@ def get_client() -> EntsoePandasClient:
     return EntsoePandasClient(api_key=api_key)
 
 
-# Bidding zones used across this project. Modifying this will change the data fetched. The database easily handles more zones, but the analysis code is written for these specific zones.
+# Bidding zones used across this project. Modifying this will change the data fetched. The database handles more zones as they are.
+# The volatility analysis follows GENERATION_ZONES (each of those zones also needs to be in PRICE_ZONES).
+# The cable analysis is written for the Baltic Cable only and has its own zone constants.
 ZONE_DE = "DE_LU"
 ZONE_SE4 = "SE_4"
 ZONES_SE = ["SE_1", "SE_2", "SE_3", "SE_4"]
@@ -29,4 +31,3 @@ FLOW_PAIRS = [                             # Baltic Cable, both directions
     (ZONE_DE, ZONE_SE4),
     (ZONE_SE4, ZONE_DE),
 ]
-BALTIC_CABLE_CAPACITY_MW = 600  # DE <-> SE4 nameplate capacity. The usable limit varies over time (flows capped around 217 MW in Jan 2026, up to ~433 MW in Sep 2026), see brief Section 5.

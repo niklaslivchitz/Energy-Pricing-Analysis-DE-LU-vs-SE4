@@ -4,8 +4,8 @@ base / DE_LU
 Dep. Variable:             volatility   R-squared:                       0.477
 Model:                            OLS   Adj. R-squared:                  0.474
 Method:                 Least Squares   F-statistic:                     72.12
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           1.74e-26
-Time:                        15:12:15   Log-Likelihood:                -1381.0
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           1.74e-26
+Time:                        10:54:54   Log-Likelihood:                -1381.0
 No. Observations:                 316   AIC:                             2768.
 Df Residuals:                     313   BIC:                             2779.
 Df Model:                           2                                         
@@ -32,8 +32,8 @@ month_control / DE_LU
 Dep. Variable:             volatility   R-squared:                       0.553
 Model:                            OLS   Adj. R-squared:                  0.535
 Method:                 Least Squares   F-statistic:                     85.49
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           1.08e-89
-Time:                        15:12:15   Log-Likelihood:                -1356.3
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           1.08e-89
+Time:                        10:54:54   Log-Likelihood:                -1356.3
 No. Observations:                 316   AIC:                             2739.
 Df Residuals:                     303   BIC:                             2787.
 Df Model:                          12                                         
@@ -70,8 +70,8 @@ log / DE_LU
 Dep. Variable:     np.log(volatility)   R-squared:                       0.589
 Model:                            OLS   Adj. R-squared:                  0.587
 Method:                 Least Squares   F-statistic:                     103.2
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           3.86e-35
-Time:                        15:12:15   Log-Likelihood:                -157.01
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           3.86e-35
+Time:                        10:54:54   Log-Likelihood:                -157.01
 No. Observations:                 316   AIC:                             320.0
 Df Residuals:                     313   BIC:                             331.3
 Df Model:                           2                                         
@@ -98,8 +98,8 @@ base / SE_4
 Dep. Variable:             volatility   R-squared:                       0.150
 Model:                            OLS   Adj. R-squared:                  0.144
 Method:                 Least Squares   F-statistic:                     21.18
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           2.35e-09
-Time:                        15:12:15   Log-Likelihood:                -1370.8
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           2.35e-09
+Time:                        10:54:54   Log-Likelihood:                -1370.8
 No. Observations:                 316   AIC:                             2748.
 Df Residuals:                     313   BIC:                             2759.
 Df Model:                           2                                         
@@ -126,8 +126,8 @@ month_control / SE_4
 Dep. Variable:             volatility   R-squared:                       0.370
 Model:                            OLS   Adj. R-squared:                  0.345
 Method:                 Least Squares   F-statistic:                     24.19
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           1.30e-37
-Time:                        15:12:15   Log-Likelihood:                -1323.4
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           1.30e-37
+Time:                        10:54:54   Log-Likelihood:                -1323.4
 No. Observations:                 316   AIC:                             2673.
 Df Residuals:                     303   BIC:                             2722.
 Df Model:                          12                                         
@@ -164,8 +164,8 @@ log / SE_4
 Dep. Variable:     np.log(volatility)   R-squared:                       0.178
 Model:                            OLS   Adj. R-squared:                  0.173
 Method:                 Least Squares   F-statistic:                     26.52
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           2.29e-11
-Time:                        15:12:15   Log-Likelihood:                -287.36
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           2.29e-11
+Time:                        10:54:54   Log-Likelihood:                -287.36
 No. Observations:                 316   AIC:                             580.7
 Df Residuals:                     313   BIC:                             592.0
 Df Model:                           2                                         
@@ -192,8 +192,8 @@ pooled / all
 Dep. Variable:             volatility   R-squared:                       0.383
 Model:                            OLS   Adj. R-squared:                  0.378
 Method:                 Least Squares   F-statistic:                     37.57
-Date:                Tue, 13 Oct 2026   Prob (F-statistic):           1.01e-33
-Time:                        15:12:15   Log-Likelihood:                -2752.0
+Date:                Wed, 14 Oct 2026   Prob (F-statistic):           1.01e-33
+Time:                        10:54:54   Log-Likelihood:                -2752.0
 No. Observations:                 632   AIC:                             5516.
 Df Residuals:                     626   BIC:                             5543.
 Df Model:                           5                                         

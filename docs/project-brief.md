@@ -326,6 +326,10 @@ Shows that the data is documented and can be trusted. Mostly documentation plus 
 - **Quality checks after every load:** 96 rows per day, no gaps, no empty values, no values outside a sensible range. Results get stored in their own table, so there's a record of every run.
 - **Lineage:** which script fills which table and writes which output file.
 - **Licence and retention notes:** ENTSO-E data is CC-BY 4.0 (checked 2026-09-11); what is kept, where, and what isn't published.
+- **What scales to other zones and what doesn't (reviewed 2026-10-14):** write this up for readers who want to reuse the code.
+  - **Scales as it is:** the database (every table has zone columns), the pipeline (loops over the lists in `src/entsoe_client.py`), the volatility analysis (follows `GENERATION_ZONES`, skips fuel types a zone doesn't report, stops with an error if a zone has no matching prices), and the volatility part of the findings report.
+  - **Needs a check when adding zones:** `EARLIEST_START` in `src/pipeline.py` is the date SE4 generation switched to 15 minutes; other zones may have switched on other dates or not at all. A flow pair with no outage records in the window would stop the pipeline run, because a failed fetch stops the run.
+  - **Doesn't scale, on purpose:** the cable analysis and the cable part of the findings report. They are about the Baltic Cable only, with their own zone constants, capacities, column names and labels. Making them work for any list of cables would only pay off together with the open question in Section 5 (the SE4 links to Denmark, Poland and Lithuania).
 
 Write the dictionary and the lineage after the cable analysis, because that analysis may add a capacity table. The quality checks can come earlier.
 
