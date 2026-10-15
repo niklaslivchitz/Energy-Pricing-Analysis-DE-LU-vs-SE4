@@ -175,12 +175,9 @@ def main():
         # the merge in build_daily_table keeps only zones with both prices and generation
         raise ValueError(f"No matching prices and generation for {sorted(missing)}. Check PRICE_ZONES and GENERATION_ZONES in src/entsoe_client.py.")
     hourly = build_hourly_table(prices)
-    print(daily.head())
-    print(hourly.head())
 
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     daily.to_csv(TABLES_DIR / "daily_volatility_and_shares.csv", index=False)
-    hourly.to_csv(TABLES_DIR / "price_by_hour.csv", index=False)
 
     spearman = daily.groupby("zone")[["volatility", "solar_share", "wind_share", "renewables_share"]].corr(method="spearman")
     print(spearman)

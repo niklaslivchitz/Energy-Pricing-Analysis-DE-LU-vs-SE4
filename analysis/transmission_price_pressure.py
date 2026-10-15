@@ -214,8 +214,6 @@ def main():
 
     cable = build_cable_table(prices, flows, outages_to_de, outages_to_se)
     daily = build_daily_table(cable)
-    print(cable.groupby("state").size())
-    print(daily.head())
 
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     daily.to_csv(TABLES_DIR / "daily_spread_and_cable_state.csv", index=False)
