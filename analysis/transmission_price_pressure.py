@@ -241,7 +241,22 @@ def main():
     in_service = cable[cable["state"] != "outage"]
     flow_by_direction["share_of_in_service_time"] = in_service.groupby("direction").size() / len(in_service)
     print(flow_by_direction)
-    flow_by_direction.to_csv(TABLES_DIR / "flow_by_direction.csv")
+    
+    # Exports for the Tableau dashboard. Local time without an offset, because Tableau handles offsets poorly.
+    cable_export = cable[[
+        "timestamp", "price_de", "price_se4", "price_spread", "abs_spread",
+        "net_flow", "capacity", "utilization", "state", "direction",
+    ]].copy()
+    cable_export.insert(1, "timestamp_local", cable_export["timestamp"].dt.tz_convert("Europe/Berlin").dt.strftime("%Y-%m-%d %H:%M:%S"))
+    cable_export.to_csv(TABLES_DIR / "cable_15min.csv", index=False)
+
+    outages = pd.concat([outages_to_se, outages_to_de])
+    outages = outages[outages["doc_status"] != "Cancelled"].copy()
+    outages["start_local"] = outages["start_time"].dt.tz_convert("Europe/Berlin").dt.strftime("%Y-%m-%d %H:%M:%S")
+    outages["end_local"] = outages["end_time"].dt.tz_convert("Europe/Berlin").dt.strftime("%Y-%m-%d %H:%M:%S")
+    outages[["zone_from", "zone_to", "start_local", "end_local", "available_mw", "business_type"]].drop_duplicates().to_csv(
+        TABLES_DIR / "outage_periods.csv", index=False
+    )
 
     coefficient_tables = []
     summaries = []

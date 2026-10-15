@@ -31,3 +31,6 @@ archive
 # planning notes for later work, kept local
 phase_6_polish/
 phase_7_stretch_goals/
+
+# large Tableau exports, regenerated on every run
+outputs/tables/*/*_15min.csv

@@ -1,11 +1,11 @@
 base / DE_LU
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:             volatility   R-squared:                       0.477
+Dep. Variable:             volatility   R-squared:                       0.476
 Model:                            OLS   Adj. R-squared:                  0.473
-Method:                 Least Squares   F-statistic:                     71.91
-Date:                Thu, 15 Oct 2026   Prob (F-statistic):           1.88e-26
-Time:                        09:31:06   Log-Likelihood:                -1389.3
+Method:                 Least Squares   F-statistic:                     71.88
+Date:                Thu, 15 Oct 2026   Prob (F-statistic):           1.93e-26
+Time:                        11:18:12   Log-Likelihood:                -1389.3
 No. Observations:                 318   AIC:                             2785.
 Df Residuals:                     315   BIC:                             2796.
 Df Model:                           2                                         
@@ -13,14 +13,14 @@ Covariance Type:                  HAC
 ===============================================================================
                   coef    std err          z      P>|z|      [0.025      0.975]
 -------------------------------------------------------------------------------
-Intercept      14.3926      5.747      2.504      0.012       3.129      25.656
-solar_share   177.6436     16.633     10.680      0.000     145.043     210.244
-wind_share      4.0503     11.440      0.354      0.723     -18.371      26.472
+Intercept      14.3496      5.743      2.499      0.012       3.094      25.605
+solar_share   177.7066     16.632     10.685      0.000     145.109     210.304
+wind_share      4.1697     11.430      0.365      0.715     -18.232      26.571
 ==============================================================================
-Omnibus:                      179.486   Durbin-Watson:                   1.416
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):             1365.306
-Skew:                           2.251   Prob(JB):                    3.37e-297
-Kurtosis:                      12.098   Cond. No.                         13.6
+Omnibus:                      179.487   Durbin-Watson:                   1.416
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             1364.742
+Skew:                           2.251   Prob(JB):                    4.47e-297
+Kurtosis:                      12.096   Cond. No.                         13.6
 ==============================================================================
 
 Notes:
@@ -31,9 +31,9 @@ month_control / DE_LU
 ==============================================================================
 Dep. Variable:             volatility   R-squared:                       0.553
 Model:                            OLS   Adj. R-squared:                  0.536
-Method:                 Least Squares   F-statistic:                     85.13
-Date:                Thu, 15 Oct 2026   Prob (F-statistic):           9.08e-90
-Time:                        09:31:07   Log-Likelihood:                -1364.1
+Method:                 Least Squares   F-statistic:                     85.10
+Date:                Thu, 15 Oct 2026   Prob (F-statistic):           9.42e-90
+Time:                        11:18:12   Log-Likelihood:                -1364.0
 No. Observations:                 318   AIC:                             2754.
 Df Residuals:                     305   BIC:                             2803.
 Df Model:                          12                                         
@@ -41,22 +41,22 @@ Covariance Type:                  HAC
 ==================================================================================
                      coef    std err          z      P>|z|      [0.025      0.975]
 ----------------------------------------------------------------------------------
-Intercept         12.5115      6.046      2.069      0.039       0.662      24.361
-C(month)[T.2]     -9.4363      2.040     -4.626      0.000     -13.434      -5.438
-C(month)[T.3]     -3.4114      4.634     -0.736      0.462     -12.493       5.670
-C(month)[T.4]    -11.9828      6.492     -1.846      0.065     -24.706       0.741
-C(month)[T.5]    -19.2872      7.279     -2.650      0.008     -33.555      -5.020
-C(month)[T.6]    -15.7192     10.581     -1.486      0.137     -36.457       5.018
-C(month)[T.7]    -19.6146      8.869     -2.211      0.027     -36.998      -2.231
-C(month)[T.8]    -13.1819      8.452     -1.560      0.119     -29.748       3.385
-C(month)[T.9]      8.4920      6.378      1.331      0.183      -4.008      20.992
-C(month)[T.10]     2.9775      4.556      0.654      0.513      -5.952      11.907
-C(month)[T.12]    -4.3113      4.273     -1.009      0.313     -12.687       4.064
-solar_share      226.5621     38.010      5.961      0.000     152.063     301.061
-wind_share         9.4961     13.032      0.729      0.466     -16.046      35.039
+Intercept         12.5017      6.045      2.068      0.039       0.654      24.349
+C(month)[T.2]     -9.4381      2.040     -4.626      0.000     -13.437      -5.439
+C(month)[T.3]     -3.4198      4.634     -0.738      0.461     -12.502       5.662
+C(month)[T.4]    -11.9966      6.491     -1.848      0.065     -24.720       0.726
+C(month)[T.5]    -19.3030      7.279     -2.652      0.008     -33.569      -5.037
+C(month)[T.6]    -15.7358     10.580     -1.487      0.137     -36.473       5.001
+C(month)[T.7]    -19.6309      8.869     -2.213      0.027     -37.014      -2.247
+C(month)[T.8]    -13.1965      8.452     -1.561      0.118     -29.762       3.369
+C(month)[T.9]      8.5166      6.378      1.335      0.182      -3.984      21.017
+C(month)[T.10]     2.9841      4.554      0.655      0.512      -5.941      11.910
+C(month)[T.12]    -4.3122      4.274     -1.009      0.313     -12.689       4.064
+solar_share      226.6400     38.008      5.963      0.000     152.145     301.135
+wind_share         9.5159     13.029      0.730      0.465     -16.020      35.052
 ==============================================================================
-Omnibus:                      214.610   Durbin-Watson:                   1.689
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):             2446.304
+Omnibus:                      214.609   Durbin-Watson:                   1.689
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             2446.145
 Skew:                           2.669   Prob(JB):                         0.00
 Kurtosis:                      15.495   Cond. No.                         31.3
 ==============================================================================
@@ -69,24 +69,24 @@ log / DE_LU
 ==============================================================================
 Dep. Variable:     np.log(volatility)   R-squared:                       0.587
 Model:                            OLS   Adj. R-squared:                  0.584
-Method:                 Least Squares   F-statistic:                     101.9
-Date:                Thu, 15 Oct 2026   Prob (F-statistic):           7.65e-35
-Time:                        09:31:07   Log-Likelihood:                -158.17
-No. Observations:                 318   AIC:                             322.3
-Df Residuals:                     315   BIC:                             333.6
+Method:                 Least Squares   F-statistic:                     101.8
+Date:                Thu, 15 Oct 2026   Prob (F-statistic):           7.90e-35
+Time:                        11:18:12   Log-Likelihood:                -158.23
+No. Observations:                 318   AIC:                             322.5
+Df Residuals:                     315   BIC:                             333.7
 Df Model:                           2                                         
 Covariance Type:                  HAC                                         
 ===============================================================================
                   coef    std err          z      P>|z|      [0.025      0.975]
 -------------------------------------------------------------------------------
-Intercept       2.8066      0.139     20.211      0.000       2.534       3.079
-solar_share     4.6655      0.369     12.633      0.000       3.942       5.389
-wind_share      0.1662      0.276      0.602      0.547      -0.375       0.707
+Intercept       2.8055      0.139     20.207      0.000       2.533       3.078
+solar_share     4.6671      0.369     12.635      0.000       3.943       5.391
+wind_share      0.1692      0.276      0.613      0.540      -0.371       0.710
 ==============================================================================
-Omnibus:                        5.598   Durbin-Watson:                   1.286
-Prob(Omnibus):                  0.061   Jarque-Bera (JB):                5.512
-Skew:                           0.322   Prob(JB):                       0.0635
-Kurtosis:                       3.040   Cond. No.                         13.6
+Omnibus:                        5.608   Durbin-Watson:                   1.286
+Prob(Omnibus):                  0.061   Jarque-Bera (JB):                5.521
+Skew:                           0.322   Prob(JB):                       0.0633
+Kurtosis:                       3.041   Cond. No.                         13.6
 ==============================================================================
 
 Notes:
@@ -99,7 +99,7 @@ Dep. Variable:             volatility   R-squared:                       0.140
 Model:                            OLS   Adj. R-squared:                  0.134
 Method:                 Least Squares   F-statistic:                     19.32
 Date:                Thu, 15 Oct 2026   Prob (F-statistic):           1.21e-08
-Time:                        09:31:07   Log-Likelihood:                -1383.6
+Time:                        11:18:12   Log-Likelihood:                -1383.6
 No. Observations:                 318   AIC:                             2773.
 Df Residuals:                     315   BIC:                             2784.
 Df Model:                           2                                         
@@ -127,7 +127,7 @@ Dep. Variable:             volatility   R-squared:                       0.374
 Model:                            OLS   Adj. R-squared:                  0.349
 Method:                 Least Squares   F-statistic:                     25.93
 Date:                Thu, 15 Oct 2026   Prob (F-statistic):           6.91e-40
-Time:                        09:31:07   Log-Likelihood:                -1333.1
+Time:                        11:18:12   Log-Likelihood:                -1333.1
 No. Observations:                 318   AIC:                             2692.
 Df Residuals:                     305   BIC:                             2741.
 Df Model:                          12                                         
@@ -165,7 +165,7 @@ Dep. Variable:     np.log(volatility)   R-squared:                       0.171
 Model:                            OLS   Adj. R-squared:                  0.165
 Method:                 Least Squares   F-statistic:                     24.78
 Date:                Thu, 15 Oct 2026   Prob (F-statistic):           1.01e-10
-Time:                        09:31:07   Log-Likelihood:                -291.18
+Time:                        11:18:12   Log-Likelihood:                -291.18
 No. Observations:                 318   AIC:                             588.4
 Df Residuals:                     315   BIC:                             599.7
 Df Model:                           2                                         
@@ -191,9 +191,9 @@ pooled / all
 ==============================================================================
 Dep. Variable:             volatility   R-squared:                       0.377
 Model:                            OLS   Adj. R-squared:                  0.372
-Method:                 Least Squares   F-statistic:                     36.73
-Date:                Thu, 15 Oct 2026   Prob (F-statistic):           4.70e-33
-Time:                        09:31:07   Log-Likelihood:                -2772.9
+Method:                 Least Squares   F-statistic:                     36.71
+Date:                Thu, 15 Oct 2026   Prob (F-statistic):           4.84e-33
+Time:                        11:18:12   Log-Likelihood:                -2772.9
 No. Observations:                 636   AIC:                             5558.
 Df Residuals:                     630   BIC:                             5585.
 Df Model:                           5                                         
@@ -201,16 +201,16 @@ Covariance Type:                  HAC
 ===============================================================================================
                                   coef    std err          z      P>|z|      [0.025      0.975]
 -----------------------------------------------------------------------------------------------
-Intercept                      14.3926      5.747      2.504      0.012       3.129      25.656
-C(zone)[T.SE_4]                23.2654      8.734      2.664      0.008       6.147      40.384
-solar_share                   177.6436     16.633     10.680      0.000     145.043     210.244
-solar_share:C(zone)[T.SE_4]  -118.5958     20.800     -5.702      0.000    -159.363     -77.829
-wind_share                      4.0503     11.440      0.354      0.723     -18.371      26.472
-wind_share:C(zone)[T.SE_4]    -16.8253     14.850     -1.133      0.257     -45.930      12.279
+Intercept                      14.3496      5.743      2.499      0.012       3.094      25.605
+C(zone)[T.SE_4]                23.3084      8.731      2.670      0.008       6.195      40.421
+solar_share                   177.7066     16.632     10.685      0.000     145.109     210.304
+solar_share:C(zone)[T.SE_4]  -118.6588     20.799     -5.705      0.000    -159.424     -77.894
+wind_share                      4.1697     11.430      0.365      0.715     -18.232      26.571
+wind_share:C(zone)[T.SE_4]    -16.9446     14.842     -1.142      0.254     -46.034      12.145
 ==============================================================================
-Omnibus:                      260.535   Durbin-Watson:                   1.334
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):             1403.302
-Skew:                           1.764   Prob(JB):                    1.89e-305
+Omnibus:                      260.555   Durbin-Watson:                   1.334
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             1403.217
+Skew:                           1.765   Prob(JB):                    1.97e-305
 Kurtosis:                       9.364   Cond. No.                         37.5
 ==============================================================================
 

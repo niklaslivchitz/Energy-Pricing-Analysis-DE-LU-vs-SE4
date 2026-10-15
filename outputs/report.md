@@ -29,9 +29,9 @@ Data from 2025-12-02 to 2026-10-14. Volatility is the standard deviation of the 
 ### Wind share in DE_LU
 
 - **Do they move together?** There is a moderate negative link between wind share and daily price volatility (correlation -0.33). *Method: Spearman rank correlation on daily values.*
-- **How big, and could it be chance?** 10 percentage points more wind share goes with +0.4 EUR/MWh daily volatility (not distinguishable from zero, p = 0.723). *Method: linear regression on daily values, with standard errors corrected for day-to-day dependence (HAC).*
-- **With the season removed:** not there (p = 0.466). *Method: the same regression with the calendar month added as a control.*
-- **Without the extreme days:** not there (p = 0.547). *Method: the same regression on the logarithm of the outcome, which shrinks extreme days.*
+- **How big, and could it be chance?** 10 percentage points more wind share goes with +0.4 EUR/MWh daily volatility (not distinguishable from zero, p = 0.715). *Method: linear regression on daily values, with standard errors corrected for day-to-day dependence (HAC).*
+- **With the season removed:** not there (p = 0.465). *Method: the same regression with the calendar month added as a control.*
+- **Without the extreme days:** not there (p = 0.540). *Method: the same regression on the logarithm of the outcome, which shrinks extreme days.*
 - **Conclusion:** No evidence of an effect. The link in the first line is indirect: it goes away once the other share is taken into account.
 
 ### Solar share in SE_4
@@ -62,7 +62,7 @@ Data from 2025-12-02 to 2026-10-14. Volatility is the standard deviation of the 
 ### Do the zones differ?
 
 - **Solar share, SE_4 compared with DE_LU:** the effect differs by -11.9 EUR/MWh per 10 percentage points (a clear effect, p < 0.001). *Method: one regression over all zones, with a separate slope per zone.*
-- **Wind share, SE_4 compared with DE_LU:** the effect differs by -1.7 EUR/MWh per 10 percentage points (not distinguishable from zero, p = 0.257). *Method: one regression over all zones, with a separate slope per zone.*
+- **Wind share, SE_4 compared with DE_LU:** the effect differs by -1.7 EUR/MWh per 10 percentage points (not distinguishable from zero, p = 0.254). *Method: one regression over all zones, with a separate slope per zone.*
 
 ## The Baltic Cable and the price gap
 
