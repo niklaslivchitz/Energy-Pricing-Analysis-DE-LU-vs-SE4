@@ -10,6 +10,8 @@ pipeline, and runs two statistical analyses on it.
 
 Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-brief.md).
 
+**Interactive dashboard:** [the Baltic Cable on Tableau Public](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard).
+
 ## Questions
 
 1. **Renewables and volatility:** does a higher share of variable renewables
@@ -37,7 +39,8 @@ Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-bri
 - **Analysis 2 (the Baltic Cable and price convergence):** done, see below.
 - **Findings report:** done. A script turns the latest results into plain
   sentences, see [`outputs/report.md`](outputs/report.md).
-- **Next:** a Tableau Public dashboard built on the result tables.
+- **Dashboard:** done, the cable analysis on [Tableau Public](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard).
+  See below.
 
 ## Findings: renewables and price volatility
 
@@ -106,6 +109,27 @@ outage records.
 The two zones are also linked through Denmark, Poland and Lithuania, and a
 full cable is partly a result of a price gap, so this shows an association,
 not that this one cable sets the gap.
+
+## Interactive dashboard
+
+[**Open the dashboard on Tableau Public**](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard)
+
+[![The cable dashboard, with 2 to 6 April 2026 selected](docs/dashboard.png)](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard)
+*The dashboard with 2 to 6 April 2026 selected (Easter). While the cable runs
+full towards Germany, the German price stays above the Swedish one; on Easter
+Sunday and Monday German prices go negative and the cable runs full towards
+Sweden.*
+
+A calendar shows the cable's state for every day: out of service, mostly
+full, or mostly spare room. Click a day, or several, and the two charts below
+show that period's prices in both zones and the flow on the cable against its
+limit. Good days to try are 2 April 2026, when the prices only meet while the
+cable has spare room, and 6 April (Easter Monday), when German prices go
+negative and the cable runs full towards Sweden.
+
+The dashboard uses data from 2 December 2025 to 14 October 2026 and does not
+update by itself: Tableau Public can't read the database, so it is refreshed
+by hand from the CSV files the analysis scripts write to `outputs/tables/`.
 
 ## Current numbers
 
