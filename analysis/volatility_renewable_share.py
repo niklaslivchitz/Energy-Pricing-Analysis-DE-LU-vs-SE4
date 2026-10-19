@@ -179,6 +179,18 @@ def main():
     TABLES_DIR.mkdir(parents=True, exist_ok=True)
     daily.to_csv(TABLES_DIR / "daily_volatility_and_shares.csv", index=False)
 
+    # Exports for the Tableau dashboard. Local time without an offset, because Tableau handles offsets poorly.
+    prices_shares = prices.merge(shares, on=["zone", "timestamp"], validate="one_to_one")
+    prices_shares.insert(2, "timestamp_local", prices_shares["timestamp"].dt.tz_convert("Europe/Berlin").dt.strftime("%Y-%m-%d %H:%M:%S"))
+    prices_shares.sort_values(["zone", "timestamp"], inplace=True)
+    prices_shares.to_csv(TABLES_DIR / "prices_shares_15min.csv", index=False)
+
+    mix = generation.copy()
+    mix["date_local"] = mix["timestamp"].dt.tz_convert("Europe/Berlin").dt.date
+    mix["energy_mwh"] = mix["value_mw"].clip(lower=0) * 0.25  # MW held for 15 minutes = MW x 0.25 h; pumping counts as zero, as in the shares
+    generation_mix = mix.groupby(["zone", "date_local", "production_type"])["energy_mwh"].sum().reset_index()
+    generation_mix.to_csv(TABLES_DIR / "generation_mix_daily.csv", index=False)
+
     spearman = daily.groupby("zone")[["volatility", "solar_share", "wind_share", "renewables_share"]].corr(method="spearman")
     print(spearman)
     spearman.to_csv(TABLES_DIR / "spearman_by_zone.csv")
