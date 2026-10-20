@@ -34,3 +34,6 @@ phase_7_stretch_goals/
 
 # large Tableau exports, regenerated on every run
 outputs/tables/*/*_15min.csv
+
+# course presentation material, kept local
+presentation/

@@ -6,7 +6,9 @@ Germany and southern Sweden?
 
 This project pulls European electricity market data from the ENTSO-E
 Transparency Platform, loads it into a SQLite database through a small ETL
-pipeline, and runs two statistical analyses on it.
+pipeline, and runs two statistical analyses on it. A final script turns the
+results into a plain-language findings report that rewrites itself on every
+run.
 
 Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-brief.md).
 
@@ -131,11 +133,50 @@ The dashboard uses data from 2 December 2025 to 14 October 2026 and does not
 update by itself: Tableau Public can't read the database, so it is refreshed
 by hand from the CSV files the analysis scripts write to `outputs/tables/`.
 
-## Current numbers
+## The findings report: results that rewrite themselves
 
-The findings above use data up to 12 October 2026 and stay as written. For
-the current numbers, with an explanation of each test in plain words, see
-[`outputs/report.md`](outputs/report.md). It is regenerated on every run.
+The findings above use data up to 12 October 2026 and stay as written. The
+data keeps moving, though: the pipeline pulls a rolling year, so every run
+shifts the numbers a little. Rather than rewriting the README after each run,
+a script writes the conclusions itself:
+[`outputs/report.md`](outputs/report.md).
+
+`analysis/findings_report.py` runs last. It reads the result tables both
+analyses write (correlations, regression coefficients, summary tables), fills
+the current numbers into pre-written sentences, and lets simple rules choose
+the wording. Every finding goes through the same four steps:
+
+1. **Do they move together?** The Spearman correlation, put into words
+   ("almost no link", "a moderate link", "a strong link").
+2. **How big, and could it be chance?** The regression coefficient with its
+   p-value, judged against a threshold of α = 0.05, using standard errors
+   corrected for neighbouring days being alike (HAC).
+3. **Two robustness checks:** is the effect still there with the season
+   removed, and without the extreme days?
+4. **A conclusion** that combines the three: "This holds up", "Treat with
+   caution", "Tentative" or "No evidence of an effect".
+
+Each line names the method behind it, the report opens with a short "how to
+read this" for readers without a statistics background, and the charts sit
+next to the findings they support. Nobody types a conclusion by hand: if a
+result stops being significant after a data refresh, its wording changes on
+the next run. An excerpt:
+
+> **Solar share in DE_LU**
+> - **Do they move together?** There is a strong positive link between solar
+>   share and daily price volatility (correlation 0.73).
+> - **How big, and could it be chance?** 10 percentage points more solar share
+>   goes with +17.8 EUR/MWh daily volatility (a clear effect, p < 0.001).
+> - **With the season removed:** still there (p < 0.001).
+> - **Without the extreme days:** still there (p < 0.001).
+> - **Conclusion:** This holds up. It is clear in the main test and survives
+>   both checks.
+
+The same rules reach a different verdict for southern Sweden: its solar
+effect is clear at first, but disappears once the season is accounted for, so
+the report says "Treat with caution". The rules only say what they were
+written to say; spotting something new is still a job for a person reading
+the tables.
 
 ## Structure
 
