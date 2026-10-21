@@ -104,6 +104,13 @@ outage records.
 - **Direction matters:** full towards Germany, SE4 is cheaper (median 27
   EUR/MWh); full towards Sweden, SE4 is more expensive (median 12). The cable fills
   towards Sweden around midday, when German solar is strongest.
+- **Other routes cover normal days; the cable matters on extreme ones.** A full
+  cable is partly a result of a price gap, but outages happen for technical
+  reasons, which makes them the fairer test. Comparing outage time with
+  in-service time in the same months, prices still meet about as often
+  without the cable, since power can take other routes through Denmark,
+  Poland and Lithuania. The extreme gaps grow, though: the 90th percentile of
+  the gap rises from about 73 to 93 EUR/MWh, roughly a quarter more.
 
 ![Daily price gap by cable state](outputs/figures/cable_spread_over_time.png)
 *Grey: cable out of service. Orange: full for most of the day.*
