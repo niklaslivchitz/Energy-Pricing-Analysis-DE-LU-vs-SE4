@@ -10,8 +10,6 @@ pipeline, and runs two statistical analyses on it. A final script turns the
 results into a plain-language findings report that rewrites itself on every
 run.
 
-Full plan, rationale and methodology: [`docs/project-brief.md`](docs/project-brief.md).
-
 **Interactive dashboard:** [the Baltic Cable on Tableau Public](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard).
 
 ## Questions
@@ -192,7 +190,7 @@ run_all.py           Runs everything in order: pipeline, both analyses, findings
 src/                 ETL pipeline: ENTSO-E client, fetch → transform → load, shared helpers
 analysis/            The two analyses and the findings report (read from the database and outputs, no API calls)
 db/                  SQLite schema (the database file itself is not committed)
-docs/                Project brief: rationale, methodology, decisions
+docs/                Dashboard screenshot
 outputs/figures/     Exported charts
 outputs/tables/      Result tables, one folder per analysis: daily CSVs, summaries, regression results
 outputs/report.md    Findings report, regenerated on every run
@@ -200,9 +198,9 @@ outputs/report.md    Findings report, regenerated on every run
 
 ## Quickstart
 
-1. Get an ENTSO-E API key (register at transparency.entsoe.eu, then request
-   API access by email; see brief Section 2) and put it in a `.env` file in the
-   repo root:
+1. Get an ENTSO-E API key: register at transparency.entsoe.eu, then email
+   `transparency@entsoe.eu` with the subject "Restful API access". Once the
+   token arrives, put it in a `.env` file in the repo root:
    ```
    ENTSOE_API_KEY=your-token-here
    ```
