@@ -12,6 +12,8 @@ run.
 
 **Interactive dashboard:** [the Baltic Cable on Tableau Public](https://public.tableau.com/app/profile/niklas.livchitz/viz/energy-project_17920690448060/Cabledashboard).
 
+**Methods and decisions:** [`docs/methods.md`](docs/methods.md).
+
 ## Questions
 
 1. **Renewables and volatility:** does a higher share of variable renewables
@@ -190,7 +192,7 @@ run_all.py           Runs everything in order: pipeline, both analyses, findings
 src/                 ETL pipeline: ENTSO-E client, fetch → transform → load, shared helpers
 analysis/            The two analyses and the findings report (read from the database and outputs, no API calls)
 db/                  SQLite schema (the database file itself is not committed)
-docs/                Dashboard screenshot
+docs/                Methods and decisions, dashboard screenshot
 outputs/figures/     Exported charts
 outputs/tables/      Result tables, one folder per analysis: daily CSVs, summaries, regression results
 outputs/report.md    Findings report, regenerated on every run
